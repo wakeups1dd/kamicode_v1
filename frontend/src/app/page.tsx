@@ -55,13 +55,13 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
     setTiles(generated);
   }, [solvedCount]);
 
-  // Orange theme levels matching Nick Launches colors
+  // Purple theme levels
   const levelColors = [
     "bg-background border border-black/10 dark:border-black/30", // Level 0
-    "bg-[#ffd2ad] border border-black/20", // Level 1: Light Orange
-    "bg-[#ffaa5e] border border-black/40", // Level 2: Medium Orange
-    "bg-[#ff7a05] border border-black/60", // Level 3: Main Orange
-    "bg-[#b85300] border border-black",    // Level 4: Dark Orange
+    "bg-[#ebd5ff] border border-black/20", // Level 1: Light Purple
+    "bg-[#d8b4fe] border border-black/40", // Level 2: Medium Purple
+    "bg-[#a855f7] border border-black/60", // Level 3: Main Purple
+    "bg-[#6b21a8] border border-black",    // Level 4: Dark Purple
   ];
 
   return (

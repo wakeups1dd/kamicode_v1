@@ -112,9 +112,8 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`sidebar-transition flex-shrink-0 flex flex-col bg-secondary-background border-r-4 border-black h-full select-none ${
-        collapsed ? "w-[76px]" : "w-[240px]"
-      }`}
+      className={`sidebar-transition flex-shrink-0 flex flex-col bg-secondary-background border-r-4 border-black h-full select-none ${collapsed ? "w-[76px]" : "w-[240px]"
+        }`}
     >
       {/* Logo Container */}
       <div className="flex items-center gap-3 px-4 h-[68px] flex-shrink-0 border-b-4 border-black">
@@ -140,9 +139,8 @@ export default function Sidebar() {
             return (
               <div
                 key={item.label}
-                className={`flex items-center gap-3 px-3 py-3 rounded-[6px] text-foreground/45 border-2 border-dashed border-transparent cursor-not-allowed select-none ${
-                  collapsed ? "justify-center" : ""
-                }`}
+                className={`flex items-center gap-3 px-3 py-3 rounded-[6px] text-foreground/45 border-2 border-dashed border-transparent cursor-not-allowed select-none ${collapsed ? "justify-center" : ""
+                  }`}
                 title={collapsed ? `${item.label} (Coming Soon)` : undefined}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
@@ -160,13 +158,11 @@ export default function Sidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-[6px] transition-all duration-100 group relative border-2 ${
-                collapsed ? "justify-center animate-fade" : "animate-fade"
-              } ${
-                active
+              className={`flex items-center gap-3 px-3 py-3 rounded-[6px] transition-all duration-100 group relative border-2 ${collapsed ? "justify-center animate-fade" : "animate-fade"
+                } ${active
                   ? "bg-main text-main-foreground border-black shadow-[2px_2px_0px_0px_#000] font-black"
                   : "text-foreground/75 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] font-bold"
-              }`}
+                }`}
               title={collapsed ? item.label : undefined}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
@@ -182,9 +178,8 @@ export default function Sidebar() {
       <div className="px-3 py-4 space-y-2 border-t-4 border-black bg-background/25">
         {/* Search */}
         <button
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${
-            collapsed ? "justify-center" : ""
-          }`}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+            }`}
           title={collapsed ? "Search" : undefined}
         >
           <IconSearch className="w-5 h-5 flex-shrink-0" />
@@ -193,9 +188,8 @@ export default function Sidebar() {
 
         {/* Settings */}
         <button
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${
-            collapsed ? "justify-center" : ""
-          }`}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+            }`}
           title={collapsed ? "Settings" : undefined}
         >
           <IconSettings className="w-5 h-5 flex-shrink-0" />
@@ -205,9 +199,8 @@ export default function Sidebar() {
         {/* Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/50 hover:text-foreground hover:bg-background/80 border-2 border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${
-            collapsed ? "justify-center" : ""
-          }`}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/50 hover:text-foreground hover:bg-background/80 border-2 border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+            }`}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <IconChevron
@@ -221,9 +214,8 @@ export default function Sidebar() {
       {/* User Box at bottom */}
       <div className="px-3 py-4 border-t-4 border-black bg-background/50">
         <div
-          className={`flex items-center gap-3 p-2 rounded-[6px] border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all cursor-pointer ${
-            collapsed ? "justify-center p-1.5" : "p-2.5"
-          }`}
+          className={`flex items-center gap-3 p-2 rounded-[6px] border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all cursor-pointer ${collapsed ? "justify-center p-1.5" : "p-2.5"
+            }`}
         >
           <div className="w-8 h-8 rounded-[4px] bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
             C

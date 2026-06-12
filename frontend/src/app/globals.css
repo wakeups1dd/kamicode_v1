@@ -7,10 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  
+  --font-heading: var(--font-dm-sans);
+
   --color-sidebar-ring: var(--ring);
   --color-sidebar-border: var(--border);
   --color-sidebar-accent-foreground: var(--foreground);
@@ -19,7 +19,7 @@
   --color-sidebar-primary: var(--main);
   --color-sidebar-foreground: var(--foreground);
   --color-sidebar: var(--secondary-background);
-  
+
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -41,7 +41,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,7 +49,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  
+
   --color-main: var(--main);
   --color-main-foreground: var(--main-foreground);
   --color-easy: var(--color-easy);
@@ -63,17 +63,20 @@
 }
 
 :root {
-  /* Nick Launches Color System - Light Mode */
-  --background: #ffedd6;
+  /* Neobrutalist Color System - Purple Theme - Light Mode */
+  --background: #f5efff;
+  /* soft pastel lavender */
   --secondary-background: #ffffff;
+  /* white card bg */
   --foreground: #000000;
-  
+
   --main-foreground: #000000;
-  --main: #ff7a05;
-  
+  --main: #a855f7;
+  /* vibrant purple */
+
   --border: #000000;
   --ring: #000000;
-  --overlay: rgba(0, 12, 0, 0.8);
+  --overlay: rgba(12, 0, 12, 0.8);
   --radius: 6px;
   --shadow-offset: 3px;
   --shadow: var(--shadow-offset) var(--shadow-offset) 0px 0px var(--border);
@@ -87,18 +90,20 @@
   --primary-foreground: var(--main-foreground);
   --secondary: var(--secondary-background);
   --secondary-foreground: var(--foreground);
-  --muted: #f5ede3;
-  --muted-foreground: #706050;
+  --muted: #eedeff;
+  /* light purple muted bg */
+  --muted-foreground: #605075;
+  /* deep purple-grey text */
   --accent: var(--main);
   --accent-foreground: var(--main-foreground);
   --destructive: #f85149;
   --input: var(--border);
-  
+
   /* Difficulty & Accents */
   --color-easy: #8bd600;
   --color-medium: #ffbf00;
   --color-hard: #f85149;
-  
+
   --color-cyan: #7a83ff;
   --color-violet: #d67aff;
   --color-green: #8bd600;
@@ -113,15 +118,18 @@
 }
 
 .dark {
-  /* Nick Launches Color System - Dark Mode */
-  --background: #322215;
-  --secondary-background: #1f1f1f;
+  /* Neobrutalist Color System - Purple Theme - Dark Mode */
+  --background: #1e132c;
+  /* deep night purple */
+  --secondary-background: #191221;
+  /* dark purple-grey card bg */
   --foreground: #e6e6e6;
-  
+
   --main-foreground: #000000;
-  --main: #eb6d00;
-  
-  --border: #000000; /* Neobrutalist outline border remains solid black */
+  --main: #c084fc;
+  /* lighter purple for readability in dark mode */
+
+  --border: #000000;
   --ring: #ffffff;
   --radius: 6px;
   --shadow-offset: 3px;
@@ -136,8 +144,10 @@
   --primary-foreground: var(--main-foreground);
   --secondary: var(--secondary-background);
   --secondary-foreground: var(--foreground);
-  --muted: #291b10;
-  --muted-foreground: #a09080;
+  --muted: #2f2042;
+  /* dark purple muted bg */
+  --muted-foreground: #a090b0;
+  /* light purple-grey text */
   --accent: var(--main);
   --accent-foreground: var(--main-foreground);
   --destructive: #f85149;
@@ -147,7 +157,7 @@
   --color-easy: #8bd600;
   --color-medium: #ffbf00;
   --color-hard: #f85149;
-  
+
   --color-cyan: #7a83ff;
   --color-violet: #d67aff;
   --color-green: #8bd600;
@@ -165,9 +175,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
@@ -178,14 +190,17 @@
   width: 10px;
   height: 10px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--background);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--main);
   border: 2.5px solid var(--background);
   border-radius: 6px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border);
 }
@@ -196,9 +211,11 @@
     opacity: 0;
     transform: scale(0.4);
   }
+
   50% {
     transform: scale(1.15);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -210,6 +227,7 @@
     opacity: 0;
     transform: translateY(12px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -220,6 +238,7 @@
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -238,10 +257,21 @@
 }
 
 @keyframes logo-shake {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(-2deg); }
-  75% { transform: rotate(2deg); }
-  100% { transform: rotate(0deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-2deg);
+  }
+
+  75% {
+    transform: rotate(2deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 /* Animation Classes */
@@ -296,10 +326,12 @@
   justify-content: center;
   transition: transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease;
 }
+
 .neo-btn:hover:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: none;
 }
+
 .neo-btn:active:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: none;
@@ -318,10 +350,12 @@
   justify-content: center;
   transition: transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease;
 }
+
 .neo-btn-outline:hover:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: none;
 }
+
 .neo-btn-outline:active:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: none;
@@ -346,6 +380,7 @@
   box-shadow: 3px 3px 0px 0px var(--border);
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
+
 .git-card:hover {
   border-color: var(--border);
   box-shadow: 4px 4px 0px 0px var(--border);
@@ -359,6 +394,7 @@
   box-shadow: 2.5px 2.5px 0px 0px var(--border);
   transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease, box-shadow 100ms ease;
 }
+
 .action-btn-git:hover:not(:disabled) {
   background: var(--muted);
   border-color: var(--border);
@@ -366,6 +402,7 @@
   transform: translate(2.5px, 2.5px);
   box-shadow: none;
 }
+
 .action-btn-git:active {
   transform: translate(2.5px, 2.5px);
   box-shadow: none;
@@ -380,11 +417,13 @@
   font-weight: 600;
   transition: background-color 150ms ease, transform 100ms ease, box-shadow 100ms ease;
 }
+
 .action-btn-primary:hover:not(:disabled) {
   background: var(--main);
   transform: translate(2.5px, 2.5px);
   box-shadow: none;
 }
+
 .action-btn-primary:active {
   transform: translate(2.5px, 2.5px);
   box-shadow: none;
@@ -394,6 +433,7 @@
 .problem-row {
   transition: background-color 100ms ease;
 }
+
 .problem-row:hover {
   background-color: var(--muted);
 }
