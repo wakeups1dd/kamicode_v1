@@ -16,7 +16,7 @@ export default function CodeEditor({
   readOnly = false,
 }: CodeEditorProps) {
   return (
-    <div className="h-full w-full rounded-lg overflow-hidden border border-[var(--kami-panel-alt)]">
+    <div className="h-full w-full rounded-[6px] overflow-hidden border-2 border-black shadow-[3px_3px_0px_0px_#000]">
       <Editor
         height="100%"
         language={language}
@@ -40,27 +40,27 @@ export default function CodeEditor({
           bracketPairColorization: { enabled: true },
         }}
         beforeMount={(monaco) => {
-          // Define KamiCode dark theme
+          // Define KamiCode Neobrutalist dark theme
           monaco.editor.defineTheme("kami-dark", {
             base: "vs-dark",
             inherit: true,
             rules: [
-              { token: "comment", foreground: "6A7280", fontStyle: "italic" },
-              { token: "keyword", foreground: "8B5CF6" },
-              { token: "string", foreground: "00FF9D" },
-              { token: "number", foreground: "F59E0B" },
-              { token: "type", foreground: "00E5FF" },
+              { token: "comment", foreground: "8a7665", fontStyle: "italic" },
+              { token: "keyword", foreground: "eb6d00", fontStyle: "bold" },
+              { token: "string", foreground: "8bd600" },
+              { token: "number", foreground: "ffbf00" },
+              { token: "type", foreground: "7a83ff" },
             ],
             colors: {
-              "editor.background": "#0B0F14",
-              "editor.foreground": "#F8FAFC",
-              "editor.lineHighlightBackground": "#111827",
-              "editor.selectionBackground": "#172033",
-              "editorCursor.foreground": "#00E5FF",
-              "editorLineNumber.foreground": "#4B5563",
-              "editorLineNumber.activeForeground": "#00E5FF",
-              "editorWidget.background": "#111827",
-              "editorWidget.border": "#172033",
+              "editor.background": "#1f1f1f",
+              "editor.foreground": "#e6e6e6",
+              "editor.lineHighlightBackground": "#282828",
+              "editor.selectionBackground": "#eb6d0033",
+              "editorCursor.foreground": "#eb6d00",
+              "editorLineNumber.foreground": "#706050",
+              "editorLineNumber.activeForeground": "#eb6d00",
+              "editorWidget.background": "#1f1f1f",
+              "editorWidget.border": "#000000",
             },
           });
         }}

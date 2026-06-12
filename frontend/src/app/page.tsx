@@ -16,11 +16,8 @@ import {
   Code,
   User,
   Calendar,
-  ChevronRight,
   BookOpen,
   Sparkles,
-  CheckCircle2,
-  GitMerge,
   Terminal,
   Plus
 } from "lucide-react";
@@ -32,7 +29,7 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
   const [tiles, setTiles] = useState<{ id: number; level: number }[]>([]);
 
   useEffect(() => {
-    // Create deterministic green levels to simulate solve history
+    // Create deterministic green/orange levels to simulate solve history
     const baseSeed = [0, 0, 1, 0, 0, 2, 0, 1, 3, 0, 0, 0, 2, 4, 1, 0, 0, 0, 2, 0, 0, 1, 0, 3, 0, 2, 0, 0, 1, 0, 2, 4, 0, 0, 1, 0, 0, 0];
     const generated = Array.from({ length: 371 }, (_, idx) => {
       let level = 0;
@@ -58,29 +55,30 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
     setTiles(generated);
   }, [solvedCount]);
 
+  // Orange theme levels matching Nick Launches colors
   const levelColors = [
-    "bg-[#161b22]", // Level 0: None
-    "bg-[#0e4429]", // Level 1: Low
-    "bg-[#006d32]", // Level 2: Mid-Low
-    "bg-[#26a641]", // Level 3: Mid-High
-    "bg-[#39d353]", // Level 4: High
+    "bg-background border border-black/10 dark:border-black/30", // Level 0
+    "bg-[#ffd2ad] border border-black/20", // Level 1: Light Orange
+    "bg-[#ffaa5e] border border-black/40", // Level 2: Medium Orange
+    "bg-[#ff7a05] border border-black/60", // Level 3: Main Orange
+    "bg-[#b85300] border border-black",    // Level 4: Dark Orange
   ];
 
   return (
     <div className="git-card p-5 animate-slide-up">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-[#f0f6fc] flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[#8b949e]" />
+        <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
           <span>Contributions & Solves</span>
         </h3>
-        <span className="text-xs text-[#8b949e] font-mono">
+        <span className="text-xs text-muted-foreground font-mono font-bold">
           {solvedCount} solved in the past year
         </span>
       </div>
 
       <div className="flex gap-2 items-start justify-center overflow-x-auto py-1 select-none">
         {/* Day-of-week indicators */}
-        <div className="grid grid-rows-7 gap-[3px] text-[9px] text-[#8b949e] pt-5 pr-1 font-mono">
+        <div className="grid grid-rows-7 gap-[3px] text-[9px] text-muted-foreground pt-5 pr-1 font-mono font-bold">
           <span>Mon</span>
           <span className="invisible">Tue</span>
           <span>Wed</span>
@@ -95,7 +93,7 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
           {tiles.map((tile, i) => (
             <div
               key={tile.id}
-              className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-125 hover:ring-1 hover:ring-[#8b949e] cursor-pointer opacity-0 ${levelColors[tile.level]} animate-grid-box`}
+              className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-125 hover:ring-2 hover:ring-black cursor-pointer opacity-0 ${levelColors[tile.level]} animate-grid-box`}
               style={{
                 animationDelay: `${Math.floor(i / 7) * 8}ms`,
               }}
@@ -106,13 +104,13 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
       </div>
 
       {/* Calendar Legend */}
-      <div className="flex items-center justify-end gap-1.5 text-[10px] text-[#8b949e] mt-3 pr-2 font-mono">
+      <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground mt-3 pr-2 font-mono font-bold">
         <span>Less</span>
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#161b22]" />
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#0e4429]" />
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#006d32]" />
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#26a641]" />
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#39d353]" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-background border border-black/20" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ffd2ad] border border-black/20" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ffaa5e] border border-black/40" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ff7a05] border border-black/60" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#b85300] border border-black" />
         <span>More</span>
       </div>
     </div>
@@ -140,7 +138,7 @@ function GitTimeline({ problems }: { problems: ProblemSummary[] }) {
 
   if (recentCommits.length === 0) {
     return (
-      <div className="git-card p-5 animate-slide-up text-center py-12 text-[#8b949e] text-sm">
+      <div className="git-card p-5 animate-slide-up text-center py-12 text-muted-foreground text-sm font-bold">
         No recent activity. Start solving problems!
       </div>
     );
@@ -148,46 +146,46 @@ function GitTimeline({ problems }: { problems: ProblemSummary[] }) {
 
   return (
     <div className="git-card p-5 animate-slide-up">
-      <h3 className="text-sm font-semibold text-[#f0f6fc] mb-5 flex items-center gap-2">
-        <GitBranch className="w-4 h-4 text-[#8b949e]" />
+      <h3 className="text-sm font-black text-foreground mb-5 flex items-center gap-2">
+        <GitBranch className="w-4 h-4 text-muted-foreground" />
         <span>Solve Timeline</span>
       </h3>
 
-      <div className="relative pl-6 border-l border-[#30363d] ml-3.5 space-y-6">
+      <div className="relative pl-6 border-l-4 border-black ml-3.5 space-y-6">
         {/* Animating line overlay */}
-        <div className="absolute left-[-1px] top-0 bottom-0 w-[2px] bg-[#2ea44f] origin-top animate-timeline" />
+        <div className="absolute left-[-4px] top-0 bottom-0 w-[4px] bg-main origin-top animate-timeline" />
 
         {recentCommits.map((c) => (
           <div key={c.id} className="relative group animate-fade">
             {/* Timeline commit icon */}
-            <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#161b22] ring-4 ring-[#0d1117] transition-all group-hover:scale-125">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#39d353] group-hover:bg-[#58a6ff] transition-colors" />
+            <span className="absolute -left-[32px] top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-main border-2 border-black shadow-[1px_1px_0px_0px_#000] transition-all group-hover:scale-110">
+              <span className="h-2 w-2 rounded-full bg-black" />
             </span>
 
-            <div className="bg-[#161b22]/50 border border-[#30363d] rounded-md p-3.5 hover:border-[#8b949e] transition-colors relative">
+            <div className="bg-secondary-background border-2 border-black rounded-[6px] p-4 shadow-[2px_2px_0px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all relative">
               <div className="flex items-center justify-between gap-4">
                 <Link
                   href={`/problems/${c.slug}`}
-                  className="font-mono text-xs font-semibold text-[#58a6ff] hover:underline flex items-center gap-1.5"
+                  className="font-mono text-xs font-black text-main hover:underline flex items-center gap-1.5"
                 >
-                  <GitCommit className="w-3.5 h-3.5 text-[#8b949e]" />
+                  <GitCommit className="w-3.5 h-3.5 text-muted-foreground" />
                   <span>commit #{String(c.id).padStart(7, "0")}</span>
                 </Link>
-                <span className="text-[10px] font-mono text-[#8b949e]">{c.date}</span>
+                <span className="text-[10px] font-mono font-bold text-muted-foreground">{c.date}</span>
               </div>
-              <h4 className="text-sm font-semibold text-[#f0f6fc] mt-1.5">{c.msg}</h4>
-              <p className="text-xs text-[#8b949e] mt-1 leading-relaxed">{c.desc}</p>
-              <div className="flex items-center gap-2 mt-3">
-                <span className="text-[10px] font-mono text-[#8b949e] bg-[#21262d] px-2 py-0.5 rounded border border-[#30363d]">
+              <h4 className="text-sm font-black text-foreground mt-2">{c.msg}</h4>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{c.desc}</p>
+              <div className="flex items-center gap-2 mt-3.5">
+                <span className="text-[10px] font-mono font-bold text-foreground bg-background px-2.5 py-0.5 rounded border-2 border-black">
                   {c.topic}
                 </span>
                 <span
-                  className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-2 border-black ${
                     c.difficulty === "easy"
-                      ? "text-[#39d353] border-[#39d353]/30 bg-[#39d353]/8"
+                      ? "bg-[#8bd600] text-black"
                       : c.difficulty === "medium"
-                      ? "text-[#d29922] border-[#d29922]/30 bg-[#d29922]/8"
-                      : "text-[#f85149] border-[#f85149]/30 bg-[#f85149]/8"
+                      ? "bg-[#ffbf00] text-black"
+                      : "bg-[#f85149] text-white"
                   }`}
                 >
                   {c.difficulty}
@@ -205,26 +203,26 @@ function GitTimeline({ problems }: { problems: ProblemSummary[] }) {
 
 function TopicLanguagesBar() {
   const topics = [
-    { name: "Arrays", pct: 40, color: "#58a6ff" },
-    { name: "Strings", pct: 25, color: "#8957e5" },
-    { name: "Dynamic Programming", pct: 15, color: "#39d353" },
-    { name: "Trees & Graphs", pct: 12, color: "#d29922" },
+    { name: "Arrays", pct: 40, color: "#7a83ff" },
+    { name: "Strings", pct: 25, color: "#d67aff" },
+    { name: "Dynamic Programming", pct: 15, color: "#8bd600" },
+    { name: "Trees & Graphs", pct: 12, color: "#ffbf00" },
     { name: "Math", pct: 8, color: "#f85149" },
   ];
 
   return (
     <div className="git-card p-5 animate-slide-up">
-      <h3 className="text-sm font-semibold text-[#f0f6fc] mb-4 flex items-center gap-2">
-        <Code className="w-4 h-4 text-[#8b949e]" />
+      <h3 className="text-sm font-black text-foreground mb-4 flex items-center gap-2">
+        <Code className="w-4 h-4 text-muted-foreground" />
         <span>Topic Mastery</span>
       </h3>
 
-      {/* GitHub Repo Style Multi-Color Bar */}
-      <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-[#21262d] mb-5">
+      {/* Neobrutalist Progress Bar */}
+      <div className="flex h-4 w-full overflow-hidden border-2 border-black rounded-[6px] bg-background mb-5 shadow-[1px_1px_0px_0px_#000]">
         {topics.map((t, idx) => (
           <div
             key={t.name}
-            className="h-full transition-all duration-700 animate-line-fill"
+            className="h-full border-r-2 last:border-r-0 border-black transition-all duration-700 animate-line-fill"
             style={{
               width: `${t.pct}%`,
               backgroundColor: t.color,
@@ -239,10 +237,10 @@ function TopicLanguagesBar() {
         {topics.map((t) => (
           <div key={t.name} className="flex flex-col space-y-1">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
-              <span className="text-xs font-medium text-[#c9d1d9]">{t.name}</span>
+              <span className="w-2.5 h-2.5 rounded-full border border-black" style={{ backgroundColor: t.color }} />
+              <span className="text-xs font-bold text-foreground">{t.name}</span>
             </div>
-            <span className="text-[10px] font-mono text-[#8b949e] pl-4">{t.pct}% solved</span>
+            <span className="text-[10px] font-mono font-bold text-muted-foreground pl-4.5">{t.pct}% solved</span>
           </div>
         ))}
       </div>
@@ -264,67 +262,70 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-full bg-[#0D1117] text-[#c9d1d9] font-sans pb-12 animate-fade">
-      {/* ── Repository-Style Header ── */}
-      <div className="bg-[#161B22] border-b border-[#30363D] py-6 px-6 sm:px-8">
-        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
+    <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
+      {/* ── Nick Launches Styled Repository-Style Header ── */}
+      <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
+        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-2">
             {/* Breadcrumb path */}
-            <div className="flex items-center gap-2 text-[#8b949e] text-sm font-mono">
-              <User className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
+              <User className="w-4 h-4 text-black dark:text-white" />
               <span className="hover:underline cursor-pointer">Coder</span>
               <span>/</span>
-              <span className="text-[#f0f6fc] font-semibold hover:underline cursor-pointer">dashboard</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full border border-[#30363d] bg-[#0d1117] font-sans font-medium">
+              <span className="text-foreground font-black hover:underline cursor-pointer">dashboard</span>
+              <span className="text-[9px] px-2 py-0.5 rounded-[4px] border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
                 Public
               </span>
             </div>
-            <p className="text-xs text-[#8b949e]">
-              Prove how well you code, not just how much. AI-native competitive coding arena.
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+              Don't just code → <span className="text-main">Get optimized</span>
+            </h1>
+            <p className="text-xs text-muted-foreground max-w-lg font-medium">
+              Prove how well you code, not just how much. AI-native competitive coding arena with instant execution feedback.
             </p>
           </div>
 
-          {/* Action Counters (GitHub Star/Fork mock styling) */}
-          <div className="flex items-center gap-2 flex-wrap text-xs font-mono select-none">
-            <div className="flex items-center rounded-md border border-[#30363D] bg-[#21262D] overflow-hidden">
-              <button className="flex items-center gap-1.5 px-3 py-1 text-[#c9d1d9] hover:bg-[#30363D] transition-colors border-r border-[#30363D]">
-                <Flame className="w-3.5 h-3.5 text-[#d29922]" />
-                <span>Streak</span>
-              </button>
-              <span className="px-2.5 py-1 text-[#f0f6fc] bg-[#161B22] font-semibold">0</span>
+          {/* Action Counters (Neobrutalist Box Counters) */}
+          <div className="flex items-center gap-3 flex-wrap select-none">
+            <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
+              <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-main text-main-foreground font-black border-r-2 border-black">
+                <Flame className="w-3.5 h-3.5" />
+                <span>STREAK</span>
+              </div>
+              <span className="px-3 py-1 text-xs font-black text-foreground bg-secondary-background">0</span>
             </div>
 
-            <div className="flex items-center rounded-md border border-[#30363D] bg-[#21262D] overflow-hidden">
-              <button className="flex items-center gap-1.5 px-3 py-1 text-[#c9d1d9] hover:bg-[#30363D] transition-colors border-r border-[#30363D]">
-                <Trophy className="w-3.5 h-3.5 text-[#58a6ff]" />
-                <span>Solved</span>
-              </button>
-              <span className="px-2.5 py-1 text-[#f0f6fc] bg-[#161B22] font-semibold">
+            <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
+              <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-[#ffbf00] text-black font-black border-r-2 border-black">
+                <Trophy className="w-3.5 h-3.5" />
+                <span>SOLVED</span>
+              </div>
+              <span className="px-3 py-1 text-xs font-black text-foreground bg-secondary-background">
                 {problems.length ? `0/${problems.length}` : "0"}
               </span>
             </div>
 
-            <div className="flex items-center rounded-md border border-[#30363D] bg-[#21262D] overflow-hidden">
-              <button className="flex items-center gap-1.5 px-3 py-1 text-[#c9d1d9] hover:bg-[#30363D] transition-colors border-r border-[#30363D]">
-                <Award className="w-3.5 h-3.5 text-[#39d353]" />
-                <span>Rating</span>
-              </button>
-              <span className="px-2.5 py-1 text-[#f0f6fc] bg-[#161B22] font-semibold">Unrated</span>
+            <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
+              <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-[#7a83ff] text-white font-black border-r-2 border-black">
+                <Award className="w-3.5 h-3.5" />
+                <span>RATING</span>
+              </div>
+              <span className="px-3 py-1 text-xs font-black text-foreground bg-secondary-background">Unrated</span>
             </div>
           </div>
         </div>
 
         {/* Repository Tab Sub-Nav */}
-        <div className="max-w-[1200px] mx-auto mt-6 flex gap-1 border-b border-transparent">
-          <button className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[#f0f6fc] border-b-2 border-[#f78166] transition-colors">
-            <BookOpen className="w-4 h-4 text-[#8b949e]" />
+        <div className="max-w-[1200px] mx-auto mt-6 flex gap-2.5">
+          <button className="flex items-center gap-2 px-4 py-2 text-xs font-black bg-main text-main-foreground border-2 border-black rounded-[6px] shadow-[2px_2px_0px_0px_#000]">
+            <BookOpen className="w-4 h-4" />
             <span>Overview</span>
           </button>
           <Link
             href="/problems"
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-[#8b949e] hover:text-[#f0f6fc] border-b-2 border-transparent hover:border-[#30363d] transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-secondary-background text-foreground border-2 border-transparent hover:border-black rounded-[6px] transition-all hover:shadow-[2px_2px_0px_0px_#000]"
           >
-            <GitPullRequest className="w-4 h-4 text-[#8b949e]" />
+            <GitPullRequest className="w-4 h-4 text-muted-foreground" />
             <span>Problems</span>
           </Link>
         </div>
@@ -336,25 +337,25 @@ export default function HomePage() {
         <div className="lg:col-span-8 space-y-6">
           {/* Quick Workflow Actions */}
           <div className="git-card p-5 animate-slide-up">
-            <h3 className="text-sm font-semibold text-[#f0f6fc] mb-4 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#d29922]" />
+            <h3 className="text-sm font-black text-foreground mb-4 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-main" />
               <span>Actions Workspace</span>
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link
                 href={problems[0] ? `/problems/${problems[0].slug}` : "/problems"}
-                className="action-btn-git p-4 flex flex-col justify-between items-start gap-3 h-[120px] group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-[6px] shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
-                  <Play className="w-5 h-5 text-[#39d353] group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded border border-[#30363d] text-[#8b949e]">
+                  <Play className="w-5 h-5 text-[#8bd600] group-hover:scale-110 transition-transform" />
+                  <span className="text-[9px] uppercase font-mono font-black px-2 py-0.5 rounded border-2 border-black bg-main text-main-foreground shadow-[1px_1px_0px_0px_#000]">
                     Daily Run
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-[#f0f6fc]">Daily Challenge</h4>
-                  <p className="text-[11px] text-[#8b949e] truncate max-w-full">
+                  <h4 className="text-xs font-black text-foreground">Daily Challenge</h4>
+                  <p className="text-[11px] text-muted-foreground truncate max-w-full font-bold">
                     {problems[0]?.title || "Loading daily challenge..."}
                   </p>
                 </div>
@@ -362,17 +363,17 @@ export default function HomePage() {
 
               <Link
                 href="/problems"
-                className="action-btn-git p-4 flex flex-col justify-between items-start gap-3 h-[120px] group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-[6px] shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
-                  <Code className="w-5 h-5 text-[#58a6ff] group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded border border-[#30363d] text-[#8b949e]">
+                  <Code className="w-5 h-5 text-[#7a83ff] group-hover:scale-110 transition-transform" />
+                  <span className="text-[9px] uppercase font-mono font-black px-2 py-0.5 rounded border-2 border-black bg-[#ffbf00] text-black shadow-[1px_1px_0px_0px_#000]">
                     Core
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-[#f0f6fc]">Browse Problems</h4>
-                  <p className="text-[11px] text-[#8b949e]">Solve arrays, strings, dynamic programing</p>
+                  <h4 className="text-xs font-black text-foreground">Browse Problems</h4>
+                  <p className="text-[11px] text-muted-foreground font-bold">Arrays, strings, graphs and dp</p>
                 </div>
               </Link>
 
@@ -382,17 +383,17 @@ export default function HomePage() {
                     ? `/problems/${problems[Math.floor(Math.random() * problems.length)].slug}`
                     : "/problems"
                 }
-                className="action-btn-git p-4 flex flex-col justify-between items-start gap-3 h-[120px] group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-[6px] shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
-                  <Plus className="w-5 h-5 text-[#8957e5] group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded border border-[#30363d] text-[#8b949e]">
+                  <Plus className="w-5 h-5 text-[#d67aff] group-hover:scale-110 transition-transform" />
+                  <span className="text-[9px] uppercase font-mono font-black px-2 py-0.5 rounded border-2 border-black bg-[#7a83ff] text-white shadow-[1px_1px_0px_0px_#000]">
                     Random
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-[#f0f6fc]">Shuffle Coding</h4>
-                  <p className="text-[11px] text-[#8b949e]">Choose a random puzzle to solve</p>
+                  <h4 className="text-xs font-black text-foreground">Shuffle Coding</h4>
+                  <p className="text-[11px] text-muted-foreground font-bold">Choose a random puzzle to solve</p>
                 </div>
               </Link>
             </div>
@@ -412,29 +413,29 @@ export default function HomePage() {
 
           {/* Top Solver repository stats */}
           <div className="git-card p-5 animate-slide-up">
-            <h3 className="text-sm font-semibold text-[#f0f6fc] mb-4 flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-[#d29922]" />
+            <h3 className="text-sm font-black text-foreground mb-4 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-[#ffbf00]" />
               <span>Division Info</span>
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center">
-                  <Star className="w-4 h-4 text-[#8b949e]" />
+              <div className="flex items-center gap-3 p-2 border-2 border-black rounded-[6px] bg-background shadow-[1.5px_1.5px_0px_0px_#000]">
+                <div className="w-9 h-9 rounded-[4px] bg-main border-2 border-black flex items-center justify-center flex-shrink-0">
+                  <Star className="w-4 h-4 text-main-foreground" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-[#f0f6fc]">Bronze League</h4>
-                  <p className="text-[10px] text-[#8b949e]">Top 20% advance weekly</p>
+                  <h4 className="text-xs font-black text-foreground">Bronze League</h4>
+                  <p className="text-[10px] text-muted-foreground font-bold">Top 20% advance weekly</p>
                 </div>
               </div>
 
-              <div className="border-t border-[#21262d] pt-4">
+              <div className="border-t-2 border-black pt-4">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#8b949e]">League Solves</span>
-                  <span className="font-mono text-[#f0f6fc]">0</span>
+                  <span className="text-muted-foreground font-bold">League Solves</span>
+                  <span className="font-mono text-foreground font-black">0</span>
                 </div>
-                <div className="flex justify-between items-center text-xs mt-2">
-                  <span className="text-[#8b949e]">League Rank</span>
-                  <span className="font-mono text-[#f0f6fc]">#—</span>
+                <div className="flex justify-between items-center text-xs mt-2.5">
+                  <span className="text-muted-foreground font-bold">League Rank</span>
+                  <span className="font-mono text-foreground font-black">#—</span>
                 </div>
               </div>
             </div>
@@ -442,12 +443,12 @@ export default function HomePage() {
 
           {/* Platform Info Panel */}
           <div className="git-card p-5 animate-slide-up">
-            <h3 className="text-sm font-semibold text-[#f0f6fc] mb-3 flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-[#39d353]" />
+            <h3 className="text-sm font-black text-foreground mb-3 flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-[#8bd600]" />
               <span>Actions Output</span>
             </h3>
-            <div className="bg-[#0d1117] border border-[#30363d] rounded-md p-3 font-mono text-[10px] text-[#39d353] space-y-1 select-all">
-              <div className="text-[#8b949e]">$ curl -s https://kamicode.com/api/status</div>
+            <div className="bg-black border-2 border-black rounded-[6px] p-3.5 font-mono text-[10px] text-[#8bd600] space-y-1 select-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <div className="text-muted-foreground font-bold">$ curl -s https://kamicode.com/api/status</div>
               <div>{"{"}</div>
               <div className="pl-4">"status": "online",</div>
               <div className="pl-4">"compiler_node": "judge0-sandbox",</div>

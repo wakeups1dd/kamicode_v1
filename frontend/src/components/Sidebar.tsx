@@ -8,7 +8,7 @@ import { useState } from "react";
 
 function IconHome({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" />
       <path d="M9 21V12h6v9" />
     </svg>
@@ -17,7 +17,7 @@ function IconHome({ className }: { className?: string }) {
 
 function IconCode({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="16 18 22 12 16 6" />
       <polyline points="8 6 2 12 8 18" />
     </svg>
@@ -26,7 +26,7 @@ function IconCode({ className }: { className?: string }) {
 
 function IconTrophy({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M6 9H4.5a2.5 2.5 0 010-5H6" />
       <path d="M18 9h1.5a2.5 2.5 0 000-5H18" />
       <path d="M4 22h16" />
@@ -38,7 +38,7 @@ function IconTrophy({ className }: { className?: string }) {
 
 function IconUser({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
@@ -47,7 +47,7 @@ function IconUser({ className }: { className?: string }) {
 
 function IconSearch({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
@@ -72,7 +72,7 @@ function IconChevron({ className, direction = "right" }: { className?: string; d
 
 function IconSettings({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
     </svg>
@@ -112,26 +112,26 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`sidebar-transition flex-shrink-0 flex flex-col bg-[#0D1117] border-r border-[#21262D] h-full ${
-        collapsed ? "w-[68px]" : "w-[220px]"
+      className={`sidebar-transition flex-shrink-0 flex flex-col bg-secondary-background border-r-4 border-black h-full select-none ${
+        collapsed ? "w-[76px]" : "w-[240px]"
       }`}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-[60px] flex-shrink-0 border-b border-[#21262D]">
+      {/* Logo Container */}
+      <div className="flex items-center gap-3 px-4 h-[68px] flex-shrink-0 border-b-4 border-black">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-md bg-gradient-to-br from-[var(--kami-cyan)] to-[var(--kami-violet)] flex items-center justify-center text-sm font-bold text-[var(--kami-bg)] flex-shrink-0 group-hover:shadow-[0_0_20px_rgba(88,166,255,0.3)] transition-shadow">
+          <div className="w-10 h-10 rounded-[6px] bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 shadow-[2px_2px_0px_0px_#000] logo-shake transition-transform">
             K
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold tracking-tight text-[#f0f6fc] whitespace-nowrap">
-              Kami<span className="text-[var(--kami-cyan)]">Code</span>
+            <span className="text-xl font-black tracking-tight text-foreground whitespace-nowrap">
+              Kami<span className="text-main">Code</span>
             </span>
           )}
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-5 space-y-2.5">
         {navItems.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;
@@ -140,16 +140,16 @@ export default function Sidebar() {
             return (
               <div
                 key={item.label}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[#484F58] cursor-not-allowed select-none border border-transparent ${
+                className={`flex items-center gap-3 px-3 py-3 rounded-[6px] text-foreground/45 border-2 border-dashed border-transparent cursor-not-allowed select-none ${
                   collapsed ? "justify-center" : ""
                 }`}
                 title={collapsed ? `${item.label} (Coming Soon)` : undefined}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 {!collapsed && (
-                  <span className="text-sm font-medium whitespace-nowrap">
+                  <span className="text-sm font-bold whitespace-nowrap flex items-center justify-between w-full">
                     {item.label}
-                    <span className="ml-2 text-[9px] text-[#484F58] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-[#21262D] bg-[#161B22]">soon</span>
+                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-[4px] border-2 border-black bg-muted text-foreground">soon</span>
                   </span>
                 )}
               </div>
@@ -160,22 +160,18 @@ export default function Sidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-150 group relative border ${
+              className={`flex items-center gap-3 px-3 py-3 rounded-[6px] transition-all duration-100 group relative border-2 ${
                 collapsed ? "justify-center animate-fade" : "animate-fade"
               } ${
                 active
-                  ? "bg-[#21262D] text-[#F0F6FC] border-[#30363D]"
-                  : "text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#161B22] border-transparent"
+                  ? "bg-main text-main-foreground border-black shadow-[2px_2px_0px_0px_#000] font-black"
+                  : "text-foreground/75 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] font-bold"
               }`}
               title={collapsed ? item.label : undefined}
             >
-              {/* Active indicator bar */}
-              {active && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--kami-cyan)]" />
-              )}
-              <Icon className={`w-5 h-5 flex-shrink-0 ${active ? "text-[var(--kami-cyan)]" : ""}`} />
+              <Icon className="w-5 h-5 flex-shrink-0" />
               {!collapsed && (
-                <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                <span className="text-sm whitespace-nowrap">{item.label}</span>
               )}
             </Link>
           );
@@ -183,33 +179,33 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom Section */}
-      <div className="px-3 py-3 space-y-1 border-t border-[#21262D]">
+      <div className="px-3 py-4 space-y-2 border-t-4 border-black bg-background/25">
         {/* Search */}
         <button
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#161B22] transition-all w-full border border-transparent ${
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${
             collapsed ? "justify-center" : ""
           }`}
           title={collapsed ? "Search" : undefined}
         >
           <IconSearch className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span className="text-sm font-medium">Search</span>}
+          {!collapsed && <span className="text-sm">Search</span>}
         </button>
 
         {/* Settings */}
         <button
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#161B22] transition-all w-full border border-transparent ${
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${
             collapsed ? "justify-center" : ""
           }`}
           title={collapsed ? "Settings" : undefined}
         >
           <IconSettings className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span className="text-sm font-medium">Settings</span>}
+          {!collapsed && <span className="text-sm">Settings</span>}
         </button>
 
         {/* Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[#484F58] hover:text-[#8B949E] hover:bg-[#161B22] transition-all w-full border border-transparent ${
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/50 hover:text-foreground hover:bg-background/80 border-2 border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${
             collapsed ? "justify-center" : ""
           }`}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -218,24 +214,24 @@ export default function Sidebar() {
             className="w-4 h-4 flex-shrink-0"
             direction={collapsed ? "right" : "left"}
           />
-          {!collapsed && <span className="text-sm font-medium">Collapse</span>}
+          {!collapsed && <span className="text-sm">Collapse</span>}
         </button>
       </div>
 
-      {/* User Avatar */}
-      <div className="px-3 py-3 border-t border-[#21262D]">
+      {/* User Box at bottom */}
+      <div className="px-3 py-4 border-t-4 border-black bg-background/50">
         <div
-          className={`flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#161B22] transition-all cursor-pointer ${
-            collapsed ? "justify-center" : ""
+          className={`flex items-center gap-3 p-2 rounded-[6px] border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all cursor-pointer ${
+            collapsed ? "justify-center p-1.5" : "p-2.5"
           }`}
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--kami-violet)] to-[var(--kami-cyan)] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+          <div className="w-8 h-8 rounded-[4px] bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
             C
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-sm font-medium text-[#F0F6FC] truncate">Coder</div>
-              <div className="text-[11px] text-[#8B949E] truncate">Unrated</div>
+              <div className="text-sm font-black text-foreground truncate">Coder</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mt-0.5">Unrated</div>
             </div>
           )}
         </div>

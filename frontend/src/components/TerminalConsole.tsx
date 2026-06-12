@@ -8,21 +8,21 @@ interface TerminalConsoleProps {
 }
 
 function StatusIndicator({ status }: { status: string }) {
-  const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
-    pending: { label: "Queued", color: "text-gray-400", icon: "⏳" },
-    running: { label: "Executing", color: "text-[var(--kami-amber)]", icon: "⚡" },
-    accepted: { label: "Accepted", color: "text-[var(--kami-green)]", icon: "✓" },
-    wrong_answer: { label: "Wrong Answer", color: "text-[var(--kami-error)]", icon: "✗" },
-    time_limit_exceeded: { label: "Time Limit Exceeded", color: "text-[var(--kami-amber)]", icon: "⏱" },
-    runtime_error: { label: "Runtime Error", color: "text-[var(--kami-error)]", icon: "💥" },
-    compilation_error: { label: "Compilation Error", color: "text-[var(--kami-error)]", icon: "🔧" },
+  const statusConfig: Record<string, { label: string; bg: string; text: string; icon: string }> = {
+    pending: { label: "Queued", bg: "bg-muted", text: "text-foreground", icon: "⏳" },
+    running: { label: "Executing", bg: "bg-[#ffbf00]", text: "text-black", icon: "⚡" },
+    accepted: { label: "Accepted", bg: "bg-[#8bd600]", text: "text-black", icon: "✓" },
+    wrong_answer: { label: "Wrong Answer", bg: "bg-[#f85149]", text: "text-white", icon: "✗" },
+    time_limit_exceeded: { label: "Time Limit Exceeded", bg: "bg-[#ffbf00]", text: "text-black", icon: "⏱" },
+    runtime_error: { label: "Runtime Error", bg: "bg-[#f85149]", text: "text-white", icon: "💥" },
+    compilation_error: { label: "Compilation Error", bg: "bg-[#f85149]", text: "text-white", icon: "🔧" },
   };
 
-  const config = statusConfig[status] || { label: status, color: "text-gray-400", icon: "?" };
+  const config = statusConfig[status] || { label: status, bg: "bg-muted", text: "text-foreground", icon: "?" };
 
   return (
-    <span className={`flex items-center gap-2 font-semibold text-sm ${config.color}`}>
-      <span className="text-base">{config.icon}</span>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-[4px] border-2 border-black font-black text-[10px] uppercase shadow-[1.5px_1.5px_0px_0px_#000] ${config.bg} ${config.text}`}>
+      <span>{config.icon}</span>
       {config.label}
     </span>
   );
@@ -31,43 +31,43 @@ function StatusIndicator({ status }: { status: string }) {
 function TestCaseRow({ result, index }: { result: TestResultItem; index: number }) {
   return (
     <div
-      className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+      className={`flex items-start gap-3.5 p-4 rounded-[6px] border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000] transition-colors ${
         result.passed
-          ? "bg-[var(--kami-green)]/5 border-[var(--kami-green)]/20"
-          : "bg-[var(--kami-error)]/5 border-[var(--kami-error)]/20"
+          ? "bg-[#8bd600]/10"
+          : "bg-[#f85149]/10"
       }`}
     >
       <span
-        className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+        className={`flex-shrink-0 w-6 h-6 rounded-[4px] border-2 border-black flex items-center justify-center text-xs font-black shadow-[1.5px_1.5px_0px_0px_#000] ${
           result.passed
-            ? "bg-[var(--kami-green)]/20 text-[var(--kami-green)]"
-            : "bg-[var(--kami-error)]/20 text-[var(--kami-error)]"
+            ? "bg-[#8bd600] text-black"
+            : "bg-[#f85149] text-white"
         }`}
       >
         {result.passed ? "✓" : "✗"}
       </span>
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="text-xs font-semibold text-gray-400">Test Case {index + 1}</div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-0.5">
-            <span className="text-[10px] text-gray-500 uppercase tracking-widest">Expected</span>
-            <pre className="text-xs font-mono text-[var(--kami-cyan)] bg-[var(--kami-bg)]/50 p-1.5 rounded truncate">
+      <div className="flex-1 min-w-0 space-y-2.5">
+        <div className="text-xs font-black text-foreground uppercase tracking-wider">Test Case {index + 1}</div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Expected</span>
+            <pre className="text-xs font-mono text-foreground bg-background p-2 rounded-[4px] border border-black truncate font-bold">
               {result.expected}
             </pre>
           </div>
-          <div className="space-y-0.5">
-            <span className="text-[10px] text-gray-500 uppercase tracking-widest">Actual</span>
+          <div className="space-y-1">
+            <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Actual</span>
             <pre
-              className={`text-xs font-mono p-1.5 rounded truncate ${
-                result.passed ? "text-[var(--kami-green)]" : "text-[var(--kami-error)]"
-              } bg-[var(--kami-bg)]/50`}
+              className={`text-xs font-mono p-2 rounded-[4px] border border-black truncate font-bold ${
+                result.passed ? "text-[#8bd600] bg-background" : "text-[#f85149] bg-background"
+              }`}
             >
               {result.actual || "(empty)"}
             </pre>
           </div>
         </div>
         {result.error && (
-          <pre className="text-xs font-mono text-[var(--kami-error)]/80 bg-[var(--kami-error)]/5 p-2 rounded mt-1 whitespace-pre-wrap">
+          <pre className="text-xs font-mono text-[#f85149] bg-black p-2.5 rounded-[4px] border border-black mt-2 whitespace-pre-wrap font-bold">
             {result.error}
           </pre>
         )}
@@ -78,38 +78,38 @@ function TestCaseRow({ result, index }: { result: TestResultItem; index: number 
 
 export default function TerminalConsole({ submission, isLoading }: TerminalConsoleProps) {
   return (
-    <div className="h-full flex flex-col bg-[var(--kami-bg)] rounded-lg border border-[var(--kami-panel-alt)] overflow-hidden">
+    <div className="h-full flex flex-col bg-background rounded-[6px] border-2 border-black overflow-hidden shadow-[3px_3px_0px_0px_#000]">
       {/* Terminal Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--kami-panel)] border-b border-[var(--kami-panel-alt)]">
+      <div className="flex items-center justify-between px-4.5 py-3 bg-secondary-background border-b-2 border-black flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--kami-error)]/60" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--kami-amber)]/60" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--kami-green)]/60" />
+            <div className="w-3 h-3 rounded-full bg-[#f85149] border border-black" />
+            <div className="w-3 h-3 rounded-full bg-[#ffbf00] border border-black" />
+            <div className="w-3 h-3 rounded-full bg-[#8bd600] border border-black" />
           </div>
-          <span className="text-xs font-mono text-gray-500 ml-2">output</span>
+          <span className="text-xs font-black uppercase tracking-wider text-foreground ml-2">output</span>
         </div>
         {submission && <StatusIndicator status={submission.status} />}
       </div>
 
       {/* Terminal Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
         {/* Empty state */}
         {!submission && !isLoading && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-600 space-y-2">
-            <span className="text-3xl">⌨</span>
-            <span className="text-sm font-mono">Submit your code to see results</span>
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-3">
+            <span className="text-4xl">⌨</span>
+            <span className="text-xs font-mono font-bold uppercase tracking-wider">Submit your code to see results</span>
           </div>
         )}
 
         {/* Loading state */}
         {isLoading && (
-          <div className="flex flex-col items-center justify-center h-full space-y-3">
+          <div className="flex flex-col items-center justify-center h-full space-y-4">
             <div className="relative w-10 h-10">
-              <div className="absolute inset-0 rounded-full border-2 border-[var(--kami-cyan)]/20" />
-              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--kami-cyan)] animate-spin" />
+              <div className="absolute inset-0 rounded-full border-4 border-muted" />
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-main animate-spin" />
             </div>
-            <span className="text-sm font-mono text-[var(--kami-cyan)]/70 animate-pulse">
+            <span className="text-xs font-mono text-main font-bold animate-pulse uppercase tracking-wider">
               Executing on Judge0...
             </span>
           </div>
@@ -120,22 +120,22 @@ export default function TerminalConsole({ submission, isLoading }: TerminalConso
           <>
             {/* Stats bar */}
             {submission.status !== "pending" && submission.status !== "running" && (
-              <div className="flex items-center gap-4 text-xs font-mono text-gray-400 pb-2 border-b border-[var(--kami-panel-alt)]">
+              <div className="flex items-center gap-4 text-xs font-mono text-foreground font-bold pb-3 border-b-2 border-black">
                 <span>
                   Tests:{" "}
-                  <span className="text-[var(--kami-green)]">{submission.passed_count}</span>
-                  <span className="text-gray-600">/{submission.total_count}</span>
+                  <span className="text-[#8bd600] font-black">{submission.passed_count}</span>
+                  <span className="text-muted-foreground">/{submission.total_count}</span>
                 </span>
                 {submission.runtime_ms != null && (
                   <span>
                     Runtime:{" "}
-                    <span className="text-[var(--kami-cyan)]">{submission.runtime_ms}ms</span>
+                    <span className="text-[#7a83ff] font-black">{submission.runtime_ms}ms</span>
                   </span>
                 )}
                 {submission.memory_kb != null && (
                   <span>
                     Memory:{" "}
-                    <span className="text-[var(--kami-violet)]">
+                    <span className="text-[#d67aff] font-black">
                       {(submission.memory_kb / 1024).toFixed(1)}MB
                     </span>
                   </span>
@@ -145,14 +145,14 @@ export default function TerminalConsole({ submission, isLoading }: TerminalConso
 
             {/* Stderr */}
             {submission.stderr && (
-              <pre className="text-xs font-mono text-[var(--kami-error)] bg-[var(--kami-error)]/5 p-3 rounded-lg border border-[var(--kami-error)]/20 whitespace-pre-wrap">
+              <pre className="text-xs font-mono text-[#f85149] bg-black p-3.5 rounded-[6px] border-2 border-black whitespace-pre-wrap font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                 {submission.stderr}
               </pre>
             )}
 
             {/* Test cases */}
             {submission.test_results && submission.test_results.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-3.5">
                 {submission.test_results.map((result, idx) => (
                   <TestCaseRow key={idx} result={result} index={idx} />
                 ))}
