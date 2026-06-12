@@ -64,7 +64,8 @@
 
 :root {
   /* Neobrutalist Color System - Purple Theme - Light Mode */
-  --background: #e2d4f7;          /* slightly darker pastel lilac-lavender */
+  --background: #e2d4f7;
+  /* slightly darker pastel lilac-lavender */
   --secondary-background: #ffffff;
   /* white card bg */
   --foreground: #000000;
@@ -89,7 +90,8 @@
   --primary-foreground: var(--main-foreground);
   --secondary: var(--secondary-background);
   --secondary-foreground: var(--foreground);
-  --muted: #d5bdf6;                /* slightly darker purple muted bg for contrast */
+  --muted: #d5bdf6;
+  /* slightly darker purple muted bg for contrast */
   --muted-foreground: #504065;
   /* deep purple-grey text */
   --accent: var(--main);

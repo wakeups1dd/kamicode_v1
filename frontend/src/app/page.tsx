@@ -180,13 +180,12 @@ function GitTimeline({ problems }: { problems: ProblemSummary[] }) {
                   {c.topic}
                 </span>
                 <span
-                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-2 border-black ${
-                    c.difficulty === "easy"
-                      ? "bg-[#8bd600] text-black"
-                      : c.difficulty === "medium"
+                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-2 border-black ${c.difficulty === "easy"
+                    ? "bg-[#8bd600] text-black"
+                    : c.difficulty === "medium"
                       ? "bg-[#ffbf00] text-black"
                       : "bg-[#f85149] text-white"
-                  }`}
+                    }`}
                 >
                   {c.difficulty}
                 </span>
@@ -257,7 +256,7 @@ export default function HomePage() {
   useEffect(() => {
     listProblems()
       .then(setProblems)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
