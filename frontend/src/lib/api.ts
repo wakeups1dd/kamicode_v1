@@ -1,10 +1,36 @@
-import type { ProblemSummary, ProblemDetail, SubmissionResponse } from "./types";
+import type {
+  ProblemSummary,
+  ProblemDetail,
+  SubmissionResponse,
+  AIAnalysisResponse,
+  CohortResponse,
+  CohortDetailResponse,
+  UserStreakResponse,
+  LeaderboardEntry,
+} from "./types";
+import { supabase } from "./supabase";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  let token: string | undefined;
+  try {
+    const { data } = await supabase.auth.getSession();
+    token = data.session?.access_token;
+  } catch (err) {
+    // If Supabase is disabled/unconfigured, ignore session retrieval
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: { ...headers, ...options?.headers },
     ...options,
   });
   if (!res.ok) {
@@ -60,4 +86,64 @@ export async function pollSubmission(
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
   throw new Error("Submission timed out");
+}
+
+export async function listMySubmissions(): Promise<SubmissionResponse[]> {
+  return apiFetch<SubmissionResponse[]>("/api/submissions/user/me");
+}
+
+export async function getUserProblemStatus(problemId: number): Promise<{
+  solved: boolean;
+  status: string | null;
+  attempts: number;
+}> {
+  return apiFetch<{
+    solved: boolean;
+    status: string | null;
+    attempts: number;
+  }>(`/api/submissions/problem/${problemId}/status`);
+}
+
+export async function getAIAnalysis(submissionId: number): Promise<AIAnalysisResponse> {
+  return apiFetch<AIAnalysisResponse>(`/api/analysis/${submissionId}`);
+}
+
+// ---------- Leaderboards ----------
+
+export async function getGlobalLeaderboard(): Promise<LeaderboardEntry[]> {
+  return apiFetch<LeaderboardEntry[]>("/api/leaderboard/global");
+}
+
+export async function getCohortLeaderboard(cohortId: number): Promise<LeaderboardEntry[]> {
+  return apiFetch<LeaderboardEntry[]>(`/api/leaderboard/cohort/${cohortId}`);
+}
+
+// ---------- Cohorts ----------
+
+export async function getMyCohorts(): Promise<CohortResponse[]> {
+  return apiFetch<CohortResponse[]>("/api/cohorts/me");
+}
+
+export async function getCohortDetail(slug: string): Promise<CohortDetailResponse> {
+  return apiFetch<CohortDetailResponse>(`/api/cohorts/${slug}`);
+}
+
+export async function createCohort(payload: { name: string; description?: string }): Promise<CohortResponse> {
+  return apiFetch<CohortResponse>("/api/cohorts/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function joinCohort(inviteCode: string): Promise<CohortResponse> {
+  return apiFetch<CohortResponse>("/api/cohorts/join", {
+    method: "POST",
+    body: JSON.stringify({ invite_code: inviteCode }),
+  });
+}
+
+// ---------- Streaks ----------
+
+export async function getMyStreak(): Promise<UserStreakResponse> {
+  return apiFetch<UserStreakResponse>("/api/streaks/me");
 }

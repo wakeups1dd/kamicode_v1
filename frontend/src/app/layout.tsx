@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
+import { AuthProvider } from "@/context/AuthContext";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -29,8 +30,10 @@ export default function RootLayout({
       className={`dark ${dmSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-full flex overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <AuthProvider>
+          <Sidebar />
+          <main className="flex-1 overflow-y-auto">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

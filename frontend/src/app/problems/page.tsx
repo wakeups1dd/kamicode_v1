@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listProblems } from "@/lib/api";
+import { listProblems, listMySubmissions } from "@/lib/api";
 import type { ProblemSummary } from "@/lib/types";
 import {
   CheckCircle2,
@@ -20,6 +20,9 @@ export default function ProblemsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [solvedProblemIds, setSolvedProblemIds] = useState<Set<number>>(new Set());
+  const [attemptedProblemIds, setAttemptedProblemIds] = useState<Set<number>>(new Set());
+
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<"all" | "easy" | "medium" | "hard">("all");
@@ -27,8 +30,26 @@ export default function ProblemsPage() {
   const [topicFilter, setTopicFilter] = useState<string>("all");
 
   useEffect(() => {
-    listProblems()
-      .then(setProblems)
+    Promise.all([
+      listProblems(),
+      listMySubmissions().catch(() => [])
+    ])
+      .then(([problemsData, submissionsData]) => {
+        setProblems(problemsData);
+        
+        const solved = new Set<number>();
+        const attempted = new Set<number>();
+        
+        submissionsData.forEach((sub) => {
+          attempted.add(sub.problem_id);
+          if (sub.status === "accepted") {
+            solved.add(sub.problem_id);
+          }
+        });
+        
+        setSolvedProblemIds(solved);
+        setAttemptedProblemIds(attempted);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -48,8 +69,12 @@ export default function ProblemsPage() {
       return false;
     }
     // Status filter
-    if (statusFilter === "solved") {
-      return false; // mock unsolved
+    const isSolved = solvedProblemIds.has(p.id);
+    if (statusFilter === "solved" && !isSolved) {
+      return false;
+    }
+    if (statusFilter === "unsolved" && isSolved) {
+      return false;
     }
     return true;
   });
@@ -161,7 +186,7 @@ export default function ProblemsPage() {
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4 text-current" />
-                <span>0 Solved</span>
+                <span>{solvedProblemIds.size} Solved</span>
               </button>
             </div>
 
@@ -210,15 +235,25 @@ export default function ProblemsPage() {
                   </button>
                 </div>
               ) : (
-                filtered.map((p, idx) => (
-                  <div
-                    key={p.id}
-                    className="problem-row p-4.5 flex items-start gap-4 bg-secondary-background hover:bg-background/80 transition-colors animate-fade"
-                  >
-                    {/* Status Circle Check */}
-                    <span className="mt-0.5 flex-shrink-0">
-                      <AlertCircle className="w-4.5 h-4.5 text-muted-foreground mt-0.5" />
-                    </span>
+                filtered.map((p, idx) => {
+                  const isSolved = solvedProblemIds.has(p.id);
+                  const isAttempted = attemptedProblemIds.has(p.id);
+                  
+                  return (
+                    <div
+                      key={p.id}
+                      className="problem-row p-4.5 flex items-start gap-4 bg-secondary-background hover:bg-background/80 transition-colors animate-fade"
+                    >
+                      {/* Status Circle Check */}
+                      <span className="mt-0.5 flex-shrink-0">
+                        {isSolved ? (
+                          <CheckCircle2 className="w-4.5 h-4.5 text-[#8bd600] mt-0.5" />
+                        ) : isAttempted ? (
+                          <AlertCircle className="w-4.5 h-4.5 text-[#ffbf00] mt-0.5" />
+                        ) : (
+                          <AlertCircle className="w-4.5 h-4.5 text-muted-foreground mt-0.5" />
+                        )}
+                      </span>
 
                     {/* Middle Column: Title & Subinfo */}
                     <div className="flex-1 min-w-0">
@@ -267,7 +302,8 @@ export default function ProblemsPage() {
                       </span>
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}

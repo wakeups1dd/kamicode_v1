@@ -110,7 +110,7 @@ export default function TerminalConsole({ submission, isLoading }: TerminalConso
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-main animate-spin" />
             </div>
             <span className="text-xs font-mono text-main font-bold animate-pulse uppercase tracking-wider">
-              Executing on Judge0...
+              Executing test cases...
             </span>
           </div>
         )}

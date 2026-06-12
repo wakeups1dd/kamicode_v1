@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 /* ── Icon components (inline SVGs to avoid extra deps) ──────── */
 
@@ -79,6 +80,17 @@ function IconSettings({ className }: { className?: string }) {
   );
 }
 
+function IconCohorts({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+      <path d="M16 3.13a4 4 0 010 7.75" />
+    </svg>
+  );
+}
+
 /* ── Nav Data ──────────────────────────────────────────────── */
 
 interface NavItem {
@@ -91,8 +103,9 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Home", href: "/", icon: IconHome },
   { label: "Problems", href: "/problems", icon: IconCode },
-  { label: "Leaderboard", href: "/leaderboard", icon: IconTrophy, disabled: true },
-  { label: "Profile", href: "/profile", icon: IconUser, disabled: true },
+  { label: "Leaderboard", href: "/leaderboard", icon: IconTrophy },
+  { label: "Cohorts", href: "/cohorts", icon: IconCohorts },
+  { label: "Profile", href: "/profile", icon: IconUser },
 ];
 
 /* ── Sidebar Component ─────────────────────────────────────── */
@@ -100,15 +113,21 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { user, signOut } = useAuth();
 
-  // Don't show sidebar on problem arena pages (full-screen editor)
+  // Don't show sidebar on auth page or problem arena pages (full-screen editor)
+  const isAuthPage = pathname.startsWith("/auth");
   const isArenaPage = /^\/problems\/[^/]+$/.test(pathname);
-  if (isArenaPage) return null;
+  if (isAuthPage || isArenaPage) return null;
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
+
+  const username = user?.email?.split("@")[0] || "guest";
+  const displayName = user?.user_metadata?.display_name || username.charAt(0).toUpperCase() + username.slice(1);
+  const avatarInit = displayName.charAt(0).toUpperCase();
 
   return (
     <aside
@@ -211,19 +230,36 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* User Box at bottom */}
+      {/* User Box at bottom with explicit Sign Out */}
       <div className="px-3 py-4 border-t-4 border-black bg-background/50">
         <div
-          className={`flex items-center gap-3 p-2 rounded-[6px] border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all cursor-pointer ${collapsed ? "justify-center p-1.5" : "p-2.5"
-            }`}
+          onClick={() => {
+            if (confirm("Are you sure you want to sign out?")) {
+              signOut();
+            }
+          }}
+          className={`flex items-center gap-3 p-2 rounded-[6px] border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 transition-all cursor-pointer ${
+            collapsed ? "justify-center p-1.5" : "p-2"
+          }`}
+          title="Sign Out"
         >
-          <div className="w-8 h-8 rounded-[4px] bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
-            C
-          </div>
+          {user?.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt={username}
+              className="w-8 h-8 rounded-[4px] border-2 border-black object-cover"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-[4px] bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
+              {avatarInit}
+            </div>
+          )}
           {!collapsed && (
-            <div className="min-w-0">
-              <div className="text-sm font-black text-foreground truncate">Coder</div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mt-0.5">Unrated</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-black truncate">{displayName}</div>
+              <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
+                Sign Out
+              </div>
             </div>
           )}
         </div>

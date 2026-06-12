@@ -51,3 +51,62 @@ export interface SubmissionResponse {
   stderr?: string;
   created_at?: string;
 }
+
+export interface AIAnalysisResponse {
+  id: number;
+  submission_id: number;
+  problem_id: number;
+  time_complexity?: string;
+  space_complexity?: string;
+  approach?: string;
+  approach_explanation?: string;
+  efficiency_score?: number;
+  code_quality_score?: number;
+  overall_score?: number;
+  strengths?: string[];
+  improvements?: string[];
+  optimized_solution_hint?: string;
+  created_at?: string;
+}
+
+export interface CohortResponse {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  invite_code: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface CohortMemberResponse {
+  user_id: string;
+  username: string;
+  display_name?: string;
+  avatar_url?: string;
+  role: string;
+  joined_at: string;
+}
+
+export interface CohortDetailResponse extends CohortResponse {
+  members: CohortMemberResponse[];
+}
+
+export interface UserStreakResponse {
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_solve_date?: string;
+  total_solves: number;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  username: string;
+  display_name?: string;
+  avatar_url?: string;
+  total_solves: number;
+  current_streak: number;
+  longest_streak: number;
+}

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { listProblems } from "@/lib/api";
-import type { ProblemSummary } from "@/lib/types";
+import { listProblems, getMyStreak, listMySubmissions } from "@/lib/api";
+import type { ProblemSummary, SubmissionResponse, UserStreakResponse } from "@/lib/types";
 import {
   GitCommit,
   GitPullRequest,
@@ -24,36 +24,35 @@ import {
 
 /* ── Contribution Calendar Component ────────────────────────── */
 
-function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
-  // Generate 53 weeks * 7 days = 371 grid tiles
+function ContributionCalendar({ submissions }: { submissions: SubmissionResponse[] }) {
   const [tiles, setTiles] = useState<{ id: number; level: number }[]>([]);
 
   useEffect(() => {
-    // Create deterministic green/orange levels to simulate solve history
-    const baseSeed = [0, 0, 1, 0, 0, 2, 0, 1, 3, 0, 0, 0, 2, 4, 1, 0, 0, 0, 2, 0, 0, 1, 0, 3, 0, 2, 0, 0, 1, 0, 2, 4, 0, 0, 1, 0, 0, 0];
-    const generated = Array.from({ length: 371 }, (_, idx) => {
-      let level = 0;
-      if (idx > 320) {
-        // High density of activity in recent weeks
-        level = baseSeed[idx % baseSeed.length];
-      } else if (idx > 150 && idx < 200) {
-        // A mid-year burst of coding activity
-        level = (idx % 3 === 0) ? Math.floor(Math.random() * 3) + 1 : 0;
-      } else {
-        // Sparsely distributed activity
-        level = (idx % 11 === 0) ? 1 : (idx % 17 === 0) ? 2 : 0;
+    // Generate 371 grid tiles (53 weeks * 7 days)
+    const generated = Array.from({ length: 371 }, (_, idx) => ({ id: idx, level: 0 }));
+    
+    // Fill in activity based on actual submission history
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    submissions.forEach(sub => {
+      if (!sub.created_at) return;
+      const subDate = new Date(sub.created_at);
+      const diffTime = today.getTime() - subDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays >= 0 && diffDays < 371) {
+        const tileIdx = 370 - diffDays;
+        if (tileIdx >= 0 && tileIdx < 371) {
+          // Increment level, accepted solves count more
+          const increment = sub.status === "accepted" ? 2 : 1;
+          generated[tileIdx].level = Math.min(4, generated[tileIdx].level + increment);
+        }
       }
-      return { id: idx, level };
     });
 
-    // Seed current day solves if solvedCount > 0
-    if (solvedCount > 0 && generated.length > 0) {
-      generated[generated.length - 1].level = 4;
-      generated[generated.length - 2].level = 3;
-      generated[generated.length - 4].level = 2;
-    }
     setTiles(generated);
-  }, [solvedCount]);
+  }, [submissions]);
 
   // Purple theme levels
   const levelColors = [
@@ -64,19 +63,23 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
     "bg-[#6b21a8] border border-black",    // Level 4: Dark Purple
   ];
 
+  const totalSolvedInYear = new Set(
+    submissions.filter(s => s.status === "accepted").map(s => s.problem_id)
+  ).size;
+
   return (
-    <div className="git-card p-5 animate-slide-up">
+    <div className="git-card p-5 animate-slide-up select-none">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-black text-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
           <span>Contributions & Solves</span>
         </h3>
         <span className="text-xs text-muted-foreground font-mono font-bold">
-          {solvedCount} solved in the past year
+          {totalSolvedInYear} unique solved challenges
         </span>
       </div>
 
-      <div className="flex gap-2 items-start justify-center overflow-x-auto py-1 select-none">
+      <div className="flex gap-2 items-start justify-center overflow-x-auto py-1">
         {/* Day-of-week indicators */}
         <div className="grid grid-rows-7 gap-[3px] text-[9px] text-muted-foreground pt-5 pr-1 font-mono font-bold">
           <span>Mon</span>
@@ -93,11 +96,8 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
           {tiles.map((tile, i) => (
             <div
               key={tile.id}
-              className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-125 hover:ring-2 hover:ring-black cursor-pointer opacity-0 ${levelColors[tile.level]} animate-grid-box`}
-              style={{
-                animationDelay: `${Math.floor(i / 7) * 8}ms`,
-              }}
-              title={`Day ${i + 1}: Level ${tile.level} Activity`}
+              className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-125 hover:ring-2 hover:ring-black cursor-pointer ${levelColors[tile.level]}`}
+              title={`Day ${371 - i} ago: Level ${tile.level} Activity`}
             />
           ))}
         </div>
@@ -107,10 +107,10 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
       <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground mt-3 pr-2 font-mono font-bold">
         <span>Less</span>
         <span className="w-2.5 h-2.5 rounded-[1px] bg-background border border-black/20" />
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ffd2ad] border border-black/20" />
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ffaa5e] border border-black/40" />
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ff7a05] border border-black/60" />
-        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#b85300] border border-black" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ebd5ff] border border-black/20" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#d8b4fe] border border-black/40" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#a855f7] border border-black/60" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#6b21a8] border border-black" />
         <span>More</span>
       </div>
     </div>
@@ -119,68 +119,94 @@ function ContributionCalendar({ solvedCount }: { solvedCount: number }) {
 
 /* ── Git Timeline Component ────────────────────────────────── */
 
-function GitTimeline({ problems }: { problems: ProblemSummary[] }) {
-  // Take first 3 problems to simulate recent commits
-  const recentCommits = problems.slice(0, 3).map((p, idx) => {
-    const dates = ["2 hours ago", "Yesterday", "3 days ago"];
-    const efficiency = ["98.2% runtime efficiency", "85.7% memory saving", "optimal time complexity"];
+interface TimelineProps {
+  submissions: SubmissionResponse[];
+  problemMap: Record<number, ProblemSummary>;
+}
+
+function GitTimeline({ submissions, problemMap }: { submissions: SubmissionResponse[]; problemMap: Record<number, ProblemSummary> }) {
+  const recentCommits = submissions.slice(0, 3).map((sub) => {
+    const prob = problemMap[sub.problem_id];
+    const title = prob?.title || `Problem ID: ${sub.problem_id}`;
+    const slug = prob?.slug || "problems";
+    const topic = prob?.topic || "general";
+    const difficulty = prob?.difficulty || "easy";
+    
+    let timeStr = "Recently";
+    if (sub.created_at) {
+      const diff = new Date().getTime() - new Date(sub.created_at).getTime();
+      const mins = Math.floor(diff / (1000 * 60));
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      
+      if (mins < 60) timeStr = `${mins}m ago`;
+      else if (hours < 24) timeStr = `${hours}h ago`;
+      else timeStr = `${days}d ago`;
+    }
+
+    const isAC = sub.status === "accepted";
+    const msg = isAC ? `Solved '${title}'` : `Attempted '${title}'`;
+    const desc = isAC 
+      ? `Successfully passed all test cases in ${sub.runtime_ms || 0}ms.`
+      : `Encountered verdict: ${sub.status.replace(/_/g, " ")}.`;
+
     return {
-      id: p.id,
-      title: p.title,
-      slug: p.slug,
-      topic: p.topic,
-      difficulty: p.difficulty,
-      date: dates[idx] || "Recently",
-      msg: `Optimize & solve '${p.title}'`,
-      desc: `Successfully passed all test cases with ${efficiency[idx] || "optimal complexity"}.`,
+      id: sub.id,
+      title,
+      slug,
+      topic,
+      difficulty,
+      date: timeStr,
+      msg,
+      desc,
+      isAC,
     };
   });
 
   if (recentCommits.length === 0) {
     return (
-      <div className="git-card p-5 animate-slide-up text-center py-12 text-muted-foreground text-sm font-bold">
-        No recent activity. Start solving problems!
+      <div className="git-card p-5 animate-slide-up text-center py-12 text-muted-foreground text-xs font-mono font-bold select-none">
+        No recent activity. Pick a challenge and start coding!
       </div>
     );
   }
 
   return (
-    <div className="git-card p-5 animate-slide-up">
+    <div className="git-card p-5 animate-slide-up select-none">
       <h3 className="text-sm font-black text-foreground mb-5 flex items-center gap-2">
         <GitBranch className="w-4 h-4 text-muted-foreground" />
         <span>Solve Timeline</span>
       </h3>
 
       <div className="relative pl-6 border-l-4 border-black ml-3.5 space-y-6">
-        {/* Animating line overlay */}
-        <div className="absolute left-[-4px] top-0 bottom-0 w-[4px] bg-main origin-top animate-timeline" />
-
         {recentCommits.map((c) => (
           <div key={c.id} className="relative group animate-fade">
             {/* Timeline commit icon */}
-            <span className="absolute -left-[32px] top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-main border-2 border-black shadow-[1px_1px_0px_0px_#000] transition-all group-hover:scale-110">
-              <span className="h-2 w-2 rounded-full bg-black" />
+            <span className={`absolute -left-[32px] top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-black shadow-[1px_1px_0px_0px_#000] transition-all group-hover:scale-110 ${
+              c.isAC ? "bg-[#8bd600]" : "bg-[#f85149]"
+            }`}>
+              <span className="h-1.5 w-1.5 rounded-full bg-black" />
             </span>
 
             <div className="bg-secondary-background border-2 border-black rounded-[6px] p-4 shadow-[2px_2px_0px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all relative">
               <div className="flex items-center justify-between gap-4">
                 <Link
                   href={`/problems/${c.slug}`}
-                  className="font-mono text-xs font-black text-main hover:underline flex items-center gap-1.5"
+                  className="font-mono text-[10px] font-black text-main hover:underline flex items-center gap-1.5"
                 >
                   <GitCommit className="w-3.5 h-3.5 text-muted-foreground" />
                   <span>commit #{String(c.id).padStart(7, "0")}</span>
                 </Link>
-                <span className="text-[10px] font-mono font-bold text-muted-foreground">{c.date}</span>
+                <span className="text-[9px] font-mono font-bold text-muted-foreground">{c.date}</span>
               </div>
-              <h4 className="text-sm font-black text-foreground mt-2">{c.msg}</h4>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{c.desc}</p>
-              <div className="flex items-center gap-2 mt-3.5">
-                <span className="text-[10px] font-mono font-bold text-foreground bg-background px-2.5 py-0.5 rounded border-2 border-black">
+              <h4 className="text-xs font-black text-foreground mt-2">{c.msg}</h4>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{c.desc}</p>
+              <div className="flex items-center gap-2 mt-3">
+                <span className="text-[9px] font-mono font-bold text-foreground bg-background px-2 py-0.5 rounded border-2 border-black">
                   {c.topic}
                 </span>
                 <span
-                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-2 border-black ${c.difficulty === "easy"
+                  className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border-2 border-black ${c.difficulty === "easy"
                     ? "bg-[#8bd600] text-black"
                     : c.difficulty === "medium"
                       ? "bg-[#ffbf00] text-black"
@@ -200,46 +226,82 @@ function GitTimeline({ problems }: { problems: ProblemSummary[] }) {
 
 /* ── Topic Mastery Languages Bar Component ──────────────────── */
 
-function TopicLanguagesBar() {
-  const topics = [
-    { name: "Arrays", pct: 40, color: "#7a83ff" },
-    { name: "Strings", pct: 25, color: "#d67aff" },
-    { name: "Dynamic Programming", pct: 15, color: "#8bd600" },
-    { name: "Trees & Graphs", pct: 12, color: "#ffbf00" },
-    { name: "Math", pct: 8, color: "#f85149" },
+function TopicLanguagesBar({
+  submissions,
+  problems,
+}: {
+  submissions: SubmissionResponse[];
+  problems: ProblemSummary[];
+}) {
+  const solvedByTopic: Record<string, number> = {};
+  const acceptedSubs = submissions.filter(s => s.status === "accepted");
+  
+  // Calculate unique problems solved per topic
+  const uniqueSolved = new Set<number>();
+  acceptedSubs.forEach(s => uniqueSolved.add(s.problem_id));
+  
+  uniqueSolved.forEach(pid => {
+    const prob = problems.find(p => p.id === pid);
+    if (prob) {
+      solvedByTopic[prob.topic] = (solvedByTopic[prob.topic] || 0) + 1;
+    }
+  });
+
+  const totalSolved = uniqueSolved.size;
+
+  const topicsList = Object.entries(solvedByTopic).map(([name, count]) => {
+    const pct = totalSolved > 0 ? Math.round((count / totalSolved) * 100) : 0;
+    return { name, count, pct };
+  }).sort((a, b) => b.count - a.count);
+
+  const fallbackTopics = [
+    { name: "Arrays", pct: 40, color: "#7a83ff", count: 0 },
+    { name: "Strings", pct: 25, color: "#d67aff", count: 0 },
+    { name: "Logic", pct: 20, color: "#8bd600", count: 0 },
+    { name: "Stacks", pct: 15, color: "#ffbf00", count: 0 }
   ];
 
+  const colors = ["#7a83ff", "#d67aff", "#8bd600", "#ffbf00", "#f85149"];
+  const displayTopics = topicsList.length > 0
+    ? topicsList.slice(0, 4).map((t, idx) => ({ ...t, color: colors[idx % colors.length] }))
+    : fallbackTopics;
+
+  // Re-normalize percentages for display bar if total > 0
+  const barSum = displayTopics.reduce((acc, t) => acc + t.pct, 0);
+
   return (
-    <div className="git-card p-5 animate-slide-up">
+    <div className="git-card p-5 animate-slide-up select-none">
       <h3 className="text-sm font-black text-foreground mb-4 flex items-center gap-2">
         <Code className="w-4 h-4 text-muted-foreground" />
         <span>Topic Mastery</span>
       </h3>
 
-      {/* Neobrutalist Progress Bar */}
       <div className="flex h-4 w-full overflow-hidden border-2 border-black rounded-[6px] bg-background mb-5 shadow-[1px_1px_0px_0px_#000]">
-        {topics.map((t, idx) => (
-          <div
-            key={t.name}
-            className="h-full border-r-2 last:border-r-0 border-black transition-all duration-700 animate-line-fill"
-            style={{
-              width: `${t.pct}%`,
-              backgroundColor: t.color,
-              animationDelay: `${idx * 150}ms`,
-            }}
-          />
-        ))}
+        {displayTopics.map((t, idx) => {
+          const widthPct = barSum > 0 ? (t.pct / barSum) * 100 : 25;
+          return (
+            <div
+              key={t.name}
+              className="h-full border-r-2 last:border-r-0 border-black transition-all duration-700 animate-line-fill"
+              style={{
+                width: `${widthPct}%`,
+                backgroundColor: t.color,
+              }}
+            />
+          );
+        })}
       </div>
 
-      {/* Topic Legend */}
       <div className="grid grid-cols-2 gap-4">
-        {topics.map((t) => (
+        {displayTopics.map((t) => (
           <div key={t.name} className="flex flex-col space-y-1">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full border border-black" style={{ backgroundColor: t.color }} />
-              <span className="text-xs font-bold text-foreground">{t.name}</span>
+              <span className="text-xs font-bold text-foreground truncate max-w-[100px]">{t.name}</span>
             </div>
-            <span className="text-[10px] font-mono font-bold text-muted-foreground pl-4.5">{t.pct}% solved</span>
+            <span className="text-[10px] font-mono font-bold text-muted-foreground pl-4.5">
+              {topicsList.length > 0 ? `${t.count} solved` : `${t.pct}% solved`}
+            </span>
           </div>
         ))}
       </div>
@@ -251,22 +313,61 @@ function TopicLanguagesBar() {
 
 export default function HomePage() {
   const [problems, setProblems] = useState<ProblemSummary[]>([]);
+  const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
+  const [streak, setStreak] = useState<UserStreakResponse | null>(null);
+  const [problemMap, setProblemMap] = useState<Record<number, ProblemSummary>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listProblems()
-      .then(setProblems)
-      .catch(() => { })
-      .finally(() => setLoading(false));
+    const loadDashboard = async () => {
+      setLoading(true);
+      try {
+        const [problemsData, submissionsData, streakData] = await Promise.all([
+          listProblems().catch(() => []),
+          listMySubmissions().catch(() => []),
+          getMyStreak().catch(() => null)
+        ]);
+        
+        setProblems(problemsData);
+        setSubmissions(submissionsData);
+        setStreak(streakData);
+
+        const pMap: Record<number, ProblemSummary> = {};
+        problemsData.forEach(p => {
+          pMap[p.id] = p;
+        });
+        setProblemMap(pMap);
+      } catch (err) {
+        console.error("Dashboard loading error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadDashboard();
   }, []);
+
+  const totalSolved = new Set(
+    submissions.filter(s => s.status === "accepted").map(s => s.problem_id)
+  ).size;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background select-none">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-4 border-transparent border-t-main animate-spin" />
+          <span className="text-xs font-mono font-bold text-muted-foreground">Loading dashboard data...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
-      {/* ── Nick Launches Styled Repository-Style Header ── */}
+      {/* Header section */}
       <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2">
-            {/* Breadcrumb path */}
             <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
               <User className="w-4 h-4 text-black dark:text-white" />
               <span className="hover:underline cursor-pointer">Coder</span>
@@ -284,14 +385,16 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Action Counters (Neobrutalist Box Counters) */}
+          {/* Action Counters */}
           <div className="flex items-center gap-3 flex-wrap select-none">
             <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
               <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-main text-main-foreground font-black border-r-2 border-black">
                 <Flame className="w-3.5 h-3.5" />
                 <span>STREAK</span>
               </div>
-              <span className="px-3 py-1 text-xs font-black text-foreground bg-secondary-background">0</span>
+              <span className="px-3 py-1 text-xs font-black text-foreground bg-secondary-background">
+                {streak?.current_streak || 0}d
+              </span>
             </div>
 
             <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
@@ -300,21 +403,23 @@ export default function HomePage() {
                 <span>SOLVED</span>
               </div>
               <span className="px-3 py-1 text-xs font-black text-foreground bg-secondary-background">
-                {problems.length ? `0/${problems.length}` : "0"}
+                {problems.length ? `${totalSolved}/${problems.length}` : "0"}
               </span>
             </div>
 
             <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
               <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-[#7a83ff] text-white font-black border-r-2 border-black">
                 <Award className="w-3.5 h-3.5" />
-                <span>RATING</span>
+                <span>SOLVES</span>
               </div>
-              <span className="px-3 py-1 text-xs font-black text-foreground bg-secondary-background">Unrated</span>
+              <span className="px-3 py-1 text-xs font-black text-foreground bg-secondary-background">
+                {streak?.total_solves || 0}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Repository Tab Sub-Nav */}
+        {/* Navigation Tabs */}
         <div className="max-w-[1200px] mx-auto mt-6 flex gap-2.5">
           <button className="flex items-center gap-2 px-4 py-2 text-xs font-black bg-main text-main-foreground border-2 border-black rounded-[6px] shadow-[2px_2px_0px_0px_#000]">
             <BookOpen className="w-4 h-4" />
@@ -330,12 +435,14 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Main Grid Layout ── */}
+      {/* Main Grid Layout */}
       <div className="max-w-[1200px] mx-auto px-6 sm:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
         {/* Left Columns (8/12) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Quick Workflow Actions */}
-          <div className="git-card p-5 animate-slide-up">
+          
+          {/* Quick Actions Panel */}
+          <div className="git-card p-5 animate-slide-up select-none">
             <h3 className="text-sm font-black text-foreground mb-4 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-main" />
               <span>Actions Workspace</span>
@@ -355,7 +462,7 @@ export default function HomePage() {
                 <div>
                   <h4 className="text-xs font-black text-foreground">Daily Challenge</h4>
                   <p className="text-[11px] text-muted-foreground truncate max-w-full font-bold">
-                    {problems[0]?.title || "Loading daily challenge..."}
+                    {problems[0]?.title || "Practice DSA Problems"}
                   </p>
                 </div>
               </Link>
@@ -398,20 +505,21 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Contribution Grid */}
-          <ContributionCalendar solvedCount={0} />
+          {/* Contribution Calendar */}
+          <ContributionCalendar submissions={submissions} />
 
           {/* Activity / Git timeline */}
-          <GitTimeline problems={problems} />
+          <GitTimeline submissions={submissions} problemMap={problemMap} />
         </div>
 
         {/* Right Columns (4/12) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Topic Languages statistics */}
-          <TopicLanguagesBar />
+          
+          {/* Topic Mastery progress */}
+          <TopicLanguagesBar submissions={submissions} problems={problems} />
 
-          {/* Top Solver repository stats */}
-          <div className="git-card p-5 animate-slide-up">
+          {/* Division info */}
+          <div className="git-card p-5 animate-slide-up select-none">
             <h3 className="text-sm font-black text-foreground mb-4 flex items-center gap-2">
               <Trophy className="w-4 h-4 text-[#ffbf00]" />
               <span>Division Info</span>
@@ -419,7 +527,7 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-2 border-2 border-black rounded-[6px] bg-background shadow-[1.5px_1.5px_0px_0px_#000]">
                 <div className="w-9 h-9 rounded-[4px] bg-main border-2 border-black flex items-center justify-center flex-shrink-0">
-                  <Star className="w-4 h-4 text-main-foreground" />
+                  <Star className="w-4 h-4 text-main-foreground animate-spin-slow" />
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-foreground">Bronze League</h4>
@@ -430,32 +538,35 @@ export default function HomePage() {
               <div className="border-t-2 border-black pt-4">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground font-bold">League Solves</span>
-                  <span className="font-mono text-foreground font-black">0</span>
+                  <span className="font-mono text-foreground font-black">{totalSolved}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs mt-2.5">
-                  <span className="text-muted-foreground font-bold">League Rank</span>
-                  <span className="font-mono text-foreground font-black">#—</span>
+                  <span className="text-muted-foreground font-bold">Current Rank</span>
+                  <span className="font-mono text-foreground font-black">
+                    {totalSolved > 0 ? "#1" : "#—"}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Platform Info Panel */}
-          <div className="git-card p-5 animate-slide-up">
+          {/* Platforms Diagnostics */}
+          <div className="git-card p-5 animate-slide-up select-none">
             <h3 className="text-sm font-black text-foreground mb-3 flex items-center gap-2">
               <Terminal className="w-4 h-4 text-[#8bd600]" />
-              <span>Actions Output</span>
+              <span>Actions Diagnostics</span>
             </h3>
             <div className="bg-black border-2 border-black rounded-[6px] p-3.5 font-mono text-[10px] text-[#8bd600] space-y-1 select-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              <div className="text-muted-foreground font-bold">$ curl -s https://kamicode.com/api/status</div>
+              <div className="text-muted-foreground font-bold">$ curl -s http://localhost:8000/health</div>
               <div>{"{"}</div>
-              <div className="pl-4">"status": "online",</div>
-              <div className="pl-4">"compiler_node": "judge0-sandbox",</div>
-              <div className="pl-4">"ai_reasoning": "enabled",</div>
-              <div className="pl-4">"version": "1.0.0-beta"</div>
+              <div className="pl-4">"status": "healthy",</div>
+              <div className="pl-4">"code_runner": "local-subprocess",</div>
+              <div className="pl-4">"ai_reasoning": "active",</div>
+              <div className="pl-4">"version": "2.0.0-mvp"</div>
               <div>{"}"}</div>
             </div>
           </div>
+          
         </div>
       </div>
     </div>

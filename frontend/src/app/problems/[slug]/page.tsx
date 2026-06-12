@@ -3,10 +3,11 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { getProblem, submitCode, pollSubmission } from "@/lib/api";
-import type { ProblemDetail, SubmissionResponse } from "@/lib/types";
+import { getProblem, submitCode, pollSubmission, getAIAnalysis } from "@/lib/api";
+import type { ProblemDetail, SubmissionResponse, AIAnalysisResponse } from "@/lib/types";
 import ProblemPanel from "@/components/ProblemPanel";
 import TerminalConsole from "@/components/TerminalConsole";
+import AIAnalysisCard from "@/components/AIAnalysisCard";
 
 // Dynamic import for Monaco to avoid SSR issues
 const CodeEditor = dynamic(() => import("@/components/CodeEditor"), {
@@ -32,15 +33,48 @@ export default function ProblemArenaPage({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"description" | "results">("description");
 
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   useEffect(() => {
     getProblem(slug)
       .then((p) => {
         setProblem(p);
-        setCode(p.starter_code || "# Write your solution here\n");
+        const savedCode = typeof window !== "undefined" ? localStorage.getItem(`kamicode_code_${p.slug}`) : null;
+        setCode(savedCode || p.starter_code || "# Write your solution here\n");
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  // Save code to localStorage on edit
+  useEffect(() => {
+    if (problem && code) {
+      localStorage.setItem(`kamicode_code_${problem.slug}`, code);
+    }
+  }, [code, problem]);
+
+  const pollAIAnalysis = async (submissionId: number) => {
+    setIsAnalyzing(true);
+    setAiAnalysis(null);
+    const maxRetries = 20;
+    const intervalMs = 2000;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const analysis = await getAIAnalysis(submissionId);
+        if (analysis && analysis.time_complexity) {
+          setAiAnalysis(analysis);
+          setIsAnalyzing(false);
+          return;
+        }
+      } catch (err) {
+        // AI analysis is still processing
+      }
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+    setIsAnalyzing(false);
+  };
 
   const handleSubmit = async () => {
     if (!problem || isSubmitting) return;
@@ -48,6 +82,8 @@ export default function ProblemArenaPage({
     setIsSubmitting(true);
     setActiveTab("results");
     setSubmission(null);
+    setAiAnalysis(null);
+    setIsAnalyzing(false);
 
     try {
       const sub = await submitCode({
@@ -60,6 +96,10 @@ export default function ProblemArenaPage({
       // Poll for results
       const result = await pollSubmission(sub.id);
       setSubmission(result);
+
+      if (result.status === "accepted") {
+        pollAIAnalysis(sub.id);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submission failed");
     } finally {
@@ -207,8 +247,11 @@ export default function ProblemArenaPage({
             {activeTab === "description" ? (
               <ProblemPanel problem={problem} />
             ) : (
-              <div className="h-full p-4 bg-background">
+              <div className="h-full overflow-y-auto p-4 bg-background space-y-4 scrollbar-thin">
                 <TerminalConsole submission={submission} isLoading={isSubmitting} />
+                {(isAnalyzing || aiAnalysis) && (
+                  <AIAnalysisCard analysis={aiAnalysis} loading={isAnalyzing} />
+                )}
               </div>
             )}
           </div>
