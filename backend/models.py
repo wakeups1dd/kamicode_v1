@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, JSON, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, JSON, Enum as SQLEnum, ForeignKey, Date
 from sqlalchemy.sql import func
 from database import Base
 import enum
@@ -22,14 +22,13 @@ class SubmissionStatus(str, enum.Enum):
 
 class User(Base):
     """
-    Flexible user model — designed as a placeholder for a full auth system.
-    Currently uses a simple username-based identification via X-User header.
-    Can be replaced with Supabase Auth, NextAuth, Clerk, etc. later.
+    User model integrated with Supabase Auth / Local dev.
+    id is a String(36) representing the Supabase UUID (or mock ID in dev).
     """
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    username = Column(String(100), unique=True, nullable=False, index=True)
+    id = Column(String(36), primary_key=True, index=True)
+    username = Column(String(255), unique=True, nullable=False, index=True)
     display_name = Column(String(255), nullable=True)
     email = Column(String(255), unique=True, nullable=True, index=True)
     avatar_url = Column(String(500), nullable=True)
@@ -59,7 +58,7 @@ class Submission(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     problem_id = Column(Integer, nullable=False, index=True)
-    user_id = Column(Integer, nullable=True, index=True)  # Nullable for backward compat
+    user_id = Column(String(36), nullable=True, index=True)  # Supabase User UUID
     language = Column(String(50), nullable=False, default="python")
     source_code = Column(Text, nullable=False)
     status = Column(SQLEnum(SubmissionStatus), nullable=False, default=SubmissionStatus.PENDING)
@@ -68,7 +67,7 @@ class Submission(Base):
     test_results = Column(JSON, nullable=True)  # [{passed, input, expected, actual}]
     passed_count = Column(Integer, default=0)
     total_count = Column(Integer, default=0)
-    judge0_tokens = Column(JSON, nullable=True)  # List of Judge0 submission tokens
+    judge0_tokens = Column(JSON, nullable=True)
     stdout = Column(Text, nullable=True)
     stderr = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -77,7 +76,6 @@ class Submission(Base):
 class AIAnalysis(Base):
     """
     Stores AI-powered analysis of accepted submissions.
-    Triggered automatically when a submission passes all test cases.
     """
     __tablename__ = "ai_analyses"
 
@@ -85,25 +83,66 @@ class AIAnalysis(Base):
     submission_id = Column(Integer, ForeignKey("submissions.id"), unique=True, nullable=False, index=True)
     problem_id = Column(Integer, nullable=False, index=True)
 
-    # Complexity analysis
-    time_complexity = Column(String(50), nullable=True)   # e.g. "O(n)"
-    space_complexity = Column(String(50), nullable=True)  # e.g. "O(n)"
+    time_complexity = Column(String(50), nullable=True)
+    space_complexity = Column(String(50), nullable=True)
 
-    # Approach detection
-    approach = Column(String(100), nullable=True)         # e.g. "Hash Map", "Two Pointers"
+    approach = Column(String(100), nullable=True)
     approach_explanation = Column(Text, nullable=True)
 
-    # Scoring (0-100)
     efficiency_score = Column(Integer, nullable=True)
     code_quality_score = Column(Integer, nullable=True)
     overall_score = Column(Integer, nullable=True)
 
-    # AI feedback
-    strengths = Column(JSON, nullable=True)           # List of strength strings
-    improvements = Column(JSON, nullable=True)        # List of improvement suggestions
+    strengths = Column(JSON, nullable=True)
+    improvements = Column(JSON, nullable=True)
     optimized_solution_hint = Column(Text, nullable=True)
 
-    # Raw AI response for debugging
     raw_response = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+
+class Cohort(Base):
+    """A college/club coding league."""
+    __tablename__ = "cohorts"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(255), nullable=False)
+    slug = Column(String(255), unique=True, index=True)
+    description = Column(Text, nullable=True)
+    invite_code = Column(String(20), unique=True, index=True)  # e.g., KAMI23
+    created_by = Column(String(36), ForeignKey("users.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class CohortMember(Base):
+    """User membership in a cohort."""
+    __tablename__ = "cohort_members"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    cohort_id = Column(Integer, ForeignKey("cohorts.id", ondelete="CASCADE"))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"))
+    role = Column(String(20), default="member")  # "admin" | "member"
+    joined_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserStreak(Base):
+    """Daily solve streak tracking."""
+    __tablename__ = "user_streaks"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    current_streak = Column(Integer, default=0)
+    longest_streak = Column(Integer, default=0)
+    last_solve_date = Column(Date, nullable=True)
+    total_solves = Column(Integer, default=0)
+
+
+class DailyChallenge(Base):
+    """Daily problem assignment for a cohort."""
+    __tablename__ = "daily_challenges"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    cohort_id = Column(Integer, ForeignKey("cohorts.id", ondelete="CASCADE"))
+    problem_id = Column(Integer, ForeignKey("problems.id", ondelete="CASCADE"))
+    date = Column(Date, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

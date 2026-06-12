@@ -1,0 +1,172 @@
+import secrets
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+
+from database import get_db
+from models import Cohort, CohortMember, User
+from schemas import CohortCreate, CohortResponse, CohortDetailResponse, CohortMemberResponse
+from auth import get_current_user
+
+router = APIRouter(prefix="/api/cohorts", tags=["cohorts"])
+
+
+def generate_invite_code(db: Session) -> str:
+    """Generate a unique 6-character uppercase alphanumeric code."""
+    while True:
+        code = "".join(secrets.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") for _ in range(6))
+        # Check uniqueness
+        exists = db.query(Cohort).filter(Cohort.invite_code == code).first()
+        if not exists:
+            return code
+
+
+@router.post("/", response_model=CohortResponse, status_code=201)
+def create_cohort(
+    payload: CohortCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new cohort coding league and generate a unique join invite code."""
+    # Generate unique slug
+    base_slug = payload.name.lower().strip().replace(" ", "-")
+    # Clean slug characters
+    base_slug = "".join(c for c in base_slug if c.isalnum() or c == "-")
+    slug = base_slug
+    counter = 1
+    while db.query(Cohort).filter(Cohort.slug == slug).first():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
+    invite_code = generate_invite_code(db)
+
+    cohort = Cohort(
+        name=payload.name,
+        slug=slug,
+        description=payload.description,
+        invite_code=invite_code,
+        created_by=current_user.id
+    )
+    db.add(cohort)
+    db.commit()
+    db.refresh(cohort)
+
+    # Automatically add the creator as an admin member
+    member = CohortMember(
+        cohort_id=cohort.id,
+        user_id=current_user.id,
+        role="admin"
+    )
+    db.add(member)
+    db.commit()
+
+    return cohort
+
+
+@router.post("/join", response_model=CohortResponse)
+def join_cohort(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Join a cohort coding league using a 6-character invite code."""
+    invite_code = payload.get("invite_code")
+    if not invite_code:
+        raise HTTPException(status_code=400, detail="Invite code is required")
+    
+    invite_code = invite_code.strip().upper()
+    cohort = db.query(Cohort).filter(Cohort.invite_code == invite_code).first()
+    if not cohort:
+        raise HTTPException(status_code=404, detail="Cohort not found with this invite code")
+
+    # Check if already a member
+    member = db.query(CohortMember).filter(
+        CohortMember.cohort_id == cohort.id,
+        CohortMember.user_id == current_user.id
+    ).first()
+    if member:
+        return cohort  # Already joined, return cohort gracefully
+
+    # Add member
+    new_member = CohortMember(
+        cohort_id=cohort.id,
+        user_id=current_user.id,
+        role="member"
+    )
+    db.add(new_member)
+    db.commit()
+
+    return cohort
+
+
+@router.get("/me", response_model=List[CohortResponse])
+def get_my_cohorts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List all cohorts that the current user belongs to."""
+    cohorts = (
+        db.query(Cohort)
+        .join(CohortMember, Cohort.id == CohortMember.cohort_id)
+        .filter(CohortMember.user_id == current_user.id)
+        .all()
+    )
+    return cohorts
+
+
+@router.get("/{slug}", response_model=CohortDetailResponse)
+def get_cohort_detail(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get detailed information about a cohort, including membership list."""
+    cohort = db.query(Cohort).filter(Cohort.slug == slug).first()
+    if not cohort:
+        raise HTTPException(status_code=404, detail="Cohort not found")
+
+    # Check if current user is a member of this cohort
+    is_member = db.query(CohortMember).filter(
+        CohortMember.cohort_id == cohort.id,
+        CohortMember.user_id == current_user.id
+    ).first()
+    if not is_member:
+        raise HTTPException(status_code=403, detail="You are not a member of this cohort")
+
+    # Fetch members with details
+    members_data = (
+        db.query(
+            CohortMember.user_id,
+            CohortMember.role,
+            CohortMember.joined_at,
+            User.username,
+            User.display_name,
+            User.avatar_url
+        )
+        .join(User, CohortMember.user_id == User.id)
+        .filter(CohortMember.cohort_id == cohort.id)
+        .all()
+    )
+
+    members_list = [
+        CohortMemberResponse(
+            user_id=m.user_id,
+            username=m.username,
+            display_name=m.display_name,
+            avatar_url=m.avatar_url,
+            role=m.role,
+            joined_at=m.joined_at
+        ) for m in members_data
+    ]
+
+    # Return combined cohort detail
+    return CohortDetailResponse(
+        id=cohort.id,
+        name=cohort.name,
+        slug=cohort.slug,
+        description=cohort.description,
+        invite_code=cohort.invite_code,
+        created_by=cohort.created_by,
+        created_at=cohort.created_at,
+        members=members_list
+    )

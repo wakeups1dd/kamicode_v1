@@ -143,10 +143,69 @@ class UserCreate(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: int
+    id: str
     username: str
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
     created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+
+# ---------- Cohort Schemas ----------
+
+class CohortBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class CohortCreate(CohortBase):
+    pass
+
+
+class CohortResponse(CohortBase):
+    id: int
+    slug: str
+    invite_code: str
+    created_by: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CohortMemberResponse(BaseModel):
+    user_id: str
+    username: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    role: str
+    joined_at: datetime
+
+
+class CohortDetailResponse(CohortResponse):
+    members: list[CohortMemberResponse] = []
+
+
+# ---------- Streak Schemas ----------
+
+class UserStreakResponse(BaseModel):
+    user_id: str
+    current_streak: int
+    longest_streak: int
+    last_solve_date: Optional[datetime] = None
+    total_solves: int
+
+    model_config = {"from_attributes": True}
+
+
+# ---------- Leaderboard Schemas ----------
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    user_id: str
+    username: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    total_solves: int
+    current_streak: int
+    longest_streak: int

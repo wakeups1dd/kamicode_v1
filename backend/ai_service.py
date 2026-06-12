@@ -12,6 +12,8 @@ import json
 import os
 from typing import Optional
 
+from config import settings
+
 try:
     from openai import AsyncOpenAI
     OPENAI_AVAILABLE = True
@@ -27,9 +29,9 @@ def _get_client() -> "AsyncOpenAI":
     if not OPENAI_AVAILABLE:
         raise RuntimeError("OpenAI package is not installed. Run: pip install openai")
     if _client is None:
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = settings.openai_api_key
         if not api_key:
-            raise RuntimeError("OPENAI_API_KEY environment variable is not set")
+            raise RuntimeError("OPENAI_API_KEY is not set in environment or .env file")
         _client = AsyncOpenAI(api_key=api_key)
     return _client
 
@@ -131,4 +133,4 @@ Analyze this solution."""
 
 def is_available() -> bool:
     """Check if OpenAI integration is configured and available."""
-    return OPENAI_AVAILABLE and bool(os.getenv("OPENAI_API_KEY"))
+    return OPENAI_AVAILABLE and bool(settings.openai_api_key)
