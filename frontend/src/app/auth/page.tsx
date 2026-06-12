@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Mail, Lock, User, Sparkles, ArrowRight, Code } from "lucide-react";
+import { Code } from "lucide-react";
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -15,16 +14,22 @@ function GithubIcon({ className }: { className?: string }) {
   );
 }
 
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
 export default function AuthPage() {
-  const { user, signIn, signUp, signInWithGithub, loading } = useAuth();
+  const { user, signInWithGithub, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
 
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   // If already logged in, redirect to dashboard
@@ -34,32 +39,24 @@ export default function AuthPage() {
     }
   }, [user, loading, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setErrorMsg("");
-    setSuccessMsg("");
     setActionLoading(true);
-
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          setErrorMsg(error.message || "Invalid email or password");
-        } else {
-          router.push("/");
-        }
-      } else {
-        const { error } = await signUp(email, password, displayName);
-        if (error) {
-          setErrorMsg(error.message || "Failed to sign up");
-        } else {
-          setSuccessMsg("Account created! Please check your email for confirmation or try logging in.");
-          setIsLogin(true);
-        }
-      }
+      await signInWithGoogle();
     } catch (err: any) {
-      setErrorMsg(err?.message || "An unexpected error occurred.");
-    } finally {
+      setErrorMsg(err?.message || "Google authentication failed.");
+      setActionLoading(false);
+    }
+  };
+
+  const handleGithubSignIn = async () => {
+    setErrorMsg("");
+    setActionLoading(true);
+    try {
+      await signInWithGithub();
+    } catch (err: any) {
+      setErrorMsg(err?.message || "GitHub authentication failed.");
       setActionLoading(false);
     }
   };
@@ -120,41 +117,12 @@ export default function AuthPage() {
       <div className="w-full max-w-md z-10 transition-all duration-300 hover:rotate-[0.5deg]">
         <div className="bg-white dark:bg-zinc-950 border-4 border-black rounded-xl p-6 md:p-8 shadow-[8px_8px_0px_0px_#000000] relative">
           
-          {/* Header tabs */}
-          <div className="flex border-b-2 border-black -mx-6 md:-mx-8 -mt-6 md:-mt-8 mb-6 bg-zinc-100 dark:bg-zinc-900 rounded-t-lg">
-            <button
-              onClick={() => {
-                setIsLogin(true);
-                setErrorMsg("");
-                setSuccessMsg("");
-              }}
-              className={`flex-1 py-4 text-center font-black text-base border-r-2 border-black transition-all ${
-                isLogin
-                  ? "bg-white dark:bg-zinc-950 text-black dark:text-white"
-                  : "text-zinc-500 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => {
-                setIsLogin(false);
-                setErrorMsg("");
-                setSuccessMsg("");
-              }}
-              className={`flex-1 py-4 text-center font-black text-base transition-all ${
-                !isLogin
-                  ? "bg-white dark:bg-zinc-950 text-black dark:text-white"
-                  : "text-zinc-500 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              Register
-            </button>
-          </div>
-
-          <h2 className="text-2xl font-black text-black dark:text-white mb-6">
-            {isLogin ? "Welcome back!" : "Create your league account"}
+          <h2 className="text-2xl font-black text-black dark:text-white mb-2">
+            Sign In / Register
           </h2>
+          <p className="text-zinc-600 dark:text-zinc-400 font-medium text-sm mb-6">
+            Join the coding league. Sign up or log in instantly using one of the secure OAuth providers below.
+          </p>
 
           {/* Form Messages */}
           {errorMsg && (
@@ -162,102 +130,39 @@ export default function AuthPage() {
               ⚠️ {errorMsg}
             </div>
           )}
-          {successMsg && (
-            <div className="bg-green-100 dark:bg-green-950 border-2 border-green-500 dark:border-green-700 text-green-700 dark:text-green-300 p-3 rounded-lg font-mono text-xs font-bold mb-4">
-              ✅ {successMsg}
-            </div>
-          )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-black uppercase text-zinc-500 dark:text-zinc-400">
-                  Display Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Alice Smith"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border-2 border-black rounded-lg bg-zinc-50 dark:bg-zinc-900 text-black dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#a855f7] focus:bg-white dark:focus:bg-zinc-950"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-black uppercase text-zinc-500 dark:text-zinc-400">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <input
-                  type="email"
-                  required
-                  placeholder="name@university.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border-2 border-black rounded-lg bg-zinc-50 dark:bg-zinc-900 text-black dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#a855f7] focus:bg-white dark:focus:bg-zinc-950"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-black uppercase text-zinc-500 dark:text-zinc-400">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border-2 border-black rounded-lg bg-zinc-50 dark:bg-zinc-900 text-black dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#a855f7] focus:bg-white dark:focus:bg-zinc-950"
-                />
-              </div>
-            </div>
-
+          <div className="space-y-4">
+            {/* Google Auth Button */}
             <button
-              type="submit"
+              type="button"
               disabled={actionLoading}
-              className="w-full bg-[#a855f7] dark:bg-[#c084fc] text-black font-black py-3 px-4 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              onClick={handleGoogleSignIn}
+              className="w-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-black dark:text-white font-black py-3 px-4 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
             >
-              {actionLoading ? (
-                <span className="animate-pulse">Running...</span>
-              ) : (
-                <>
-                  <span>{isLogin ? "Sign In" : "Register"}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              <GoogleIcon className="w-5 h-5" />
+              <span>Continue with Google</span>
             </button>
-          </form>
 
-          {/* Separator */}
-          <div className="flex items-center my-6">
-            <div className="flex-1 h-[2px] bg-black"></div>
-            <span className="px-3 text-xs font-black uppercase text-zinc-500 dark:text-zinc-400">
-              Or Connect With
-            </span>
-            <div className="flex-1 h-[2px] bg-black"></div>
+            {/* GitHub Auth Button */}
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={handleGithubSignIn}
+              className="w-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-black dark:text-white font-black py-3 px-4 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+            >
+              <GithubIcon className="w-5 h-5 text-black dark:text-white" />
+              <span>Continue with GitHub</span>
+            </button>
           </div>
 
-          {/* GitHub Auth Button */}
-          <button
-            type="button"
-            onClick={signInWithGithub}
-            className="w-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-black dark:text-white font-black py-3 px-4 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 cursor-pointer"
-          >
-            <GithubIcon className="w-5 h-5 text-black dark:text-white" />
-            <span>GitHub Profile</span>
-          </button>
+          <div className="mt-8 pt-4 border-t-2 border-zinc-200 dark:border-zinc-800 text-center">
+            <p className="text-[10px] font-mono text-zinc-500 dark:text-zinc-500 uppercase tracking-wider">
+              Secure authentication powered by Supabase
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+

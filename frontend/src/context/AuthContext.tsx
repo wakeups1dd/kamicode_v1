@@ -20,6 +20,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGithub: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -114,6 +115,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -122,7 +130,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, signUp, signIn, signInWithGithub, signOut }}
+      value={{
+        user,
+        session,
+        loading,
+        signUp,
+        signIn,
+        signInWithGithub,
+        signInWithGoogle,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>
