@@ -5,9 +5,10 @@ export function middleware(request: NextRequest) {
   const hasSupabase = 
     !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
     !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const isBypass = process.env.NEXT_PUBLIC_BYPASS_AUTH === "true";
 
-  // If Supabase is not configured, bypass auth checks so development doesn't break
-  if (!hasSupabase) {
+  // If Supabase is not configured or bypass is enabled, skip auth checks
+  if (!hasSupabase || isBypass) {
     return NextResponse.next();
   }
 

@@ -22,8 +22,8 @@ async def get_current_user_id(request: Request) -> Optional[str]:
     """
     auth_header = request.headers.get("Authorization")
 
-    # If Supabase JWT secret is configured, enforce token decoding
-    if settings.supabase_jwt_secret:
+    # If Supabase JWT secret is configured and auth is not bypassed, enforce token decoding
+    if settings.supabase_jwt_secret and not settings.bypass_auth:
         if not auth_header or not auth_header.startswith("Bearer "):
             # No token provided, return None (endpoint can decide if login is required)
             return None
@@ -95,7 +95,7 @@ async def get_current_user(
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
             try:
-                if settings.supabase_jwt_secret:
+                if settings.supabase_jwt_secret and not settings.bypass_auth:
                     payload = jwt.decode(
                         token,
                         settings.supabase_jwt_secret,

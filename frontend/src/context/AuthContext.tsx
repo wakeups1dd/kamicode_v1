@@ -24,6 +24,44 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
+const isBypass = process.env.NEXT_PUBLIC_BYPASS_AUTH === "true";
+
+const getMockToken = () => {
+  const payload = {
+    sub: "dev-user-id",
+    email: "dev@kamicode.local",
+    user_metadata: {
+      display_name: "Dev User",
+    },
+  };
+  const str = JSON.stringify(payload);
+  const base64 = typeof window !== "undefined"
+    ? btoa(str)
+    : Buffer.from(str).toString("base64");
+  const base64Url = base64.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  return `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${base64Url}.mock_signature`;
+};
+
+const getMockUser = (): User => ({
+  id: "dev-user-id",
+  email: "dev@kamicode.local",
+  app_metadata: {},
+  user_metadata: {
+    display_name: "Dev User",
+  },
+  aud: "authenticated",
+  role: "authenticated",
+  created_at: new Date().toISOString(),
+} as User);
+
+const getMockSession = (): Session => ({
+  access_token: getMockToken(),
+  token_type: "bearer",
+  expires_in: 3600,
+  refresh_token: "mock-refresh-token",
+  user: getMockUser(),
+});
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /* ─── Provider ──────────────────────────────────────── */
@@ -45,6 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize session on mount
   useEffect(() => {
+    if (isBypass) {
+      const mockSession = getMockSession();
+      setSession(mockSession);
+      setUser(mockSession.user);
+      updateAuthCookie(mockSession);
+      setLoading(false);
+      return;
+    }
+
     const initSession = async () => {
       try {
         const {
@@ -78,6 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string, displayName?: string) => {
+      if (isBypass) {
+        return { error: null };
+      }
       try {
         const { error } = await supabase.auth.signUp({
           email,
@@ -96,6 +146,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signIn = useCallback(async (email: string, password: string) => {
+    if (isBypass) {
+      return { error: null };
+    }
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -109,6 +162,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGithub = useCallback(async () => {
+    if (isBypass) {
+      window.location.href = "/";
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: { redirectTo: `${window.location.origin}/` },
@@ -116,6 +173,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
+    if (isBypass) {
+      window.location.href = "/";
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/` },
@@ -123,6 +184,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    if (isBypass) {
+      setUser(null);
+      setSession(null);
+      updateAuthCookie(null);
+      return;
+    }
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

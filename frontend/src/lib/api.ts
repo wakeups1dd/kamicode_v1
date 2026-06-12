@@ -12,13 +12,35 @@ import { supabase } from "./supabase";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const isBypass = process.env.NEXT_PUBLIC_BYPASS_AUTH === "true";
+
+const getMockToken = () => {
+  const payload = {
+    sub: "dev-user-id",
+    email: "dev@kamicode.local",
+    user_metadata: {
+      display_name: "Dev User",
+    },
+  };
+  const str = JSON.stringify(payload);
+  const base64 = typeof window !== "undefined"
+    ? btoa(str)
+    : Buffer.from(str).toString("base64");
+  const base64Url = base64.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  return `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${base64Url}.mock_signature`;
+};
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   let token: string | undefined;
-  try {
-    const { data } = await supabase.auth.getSession();
-    token = data.session?.access_token;
-  } catch (err) {
-    // If Supabase is disabled/unconfigured, ignore session retrieval
+  if (isBypass) {
+    token = getMockToken();
+  } else {
+    try {
+      const { data } = await supabase.auth.getSession();
+      token = data.session?.access_token;
+    } catch (err) {
+      // If Supabase is disabled/unconfigured, ignore session retrieval
+    }
   }
 
   const headers: Record<string, string> = {
