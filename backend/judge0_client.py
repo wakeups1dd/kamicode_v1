@@ -10,11 +10,12 @@ import asyncio
 import base64
 from typing import Optional
 
+from config import settings
 
 # Judge0 CE (Community Edition) via RapidAPI — free tier
-JUDGE0_BASE_URL = "https://judge0-ce.p.rapidapi.com"
-JUDGE0_API_KEY = ""  # Set your RapidAPI key here or via env var
-JUDGE0_API_HOST = "judge0-ce.p.rapidapi.com"
+JUDGE0_BASE_URL = settings.judge0_base_url
+JUDGE0_API_KEY = settings.judge0_api_key
+JUDGE0_API_HOST = settings.judge0_api_host
 
 # Language IDs for Judge0
 LANGUAGE_IDS = {
