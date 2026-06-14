@@ -19,7 +19,8 @@ import {
   BookOpen,
   Sparkles,
   Terminal,
-  Plus
+  Plus,
+  Swords
 } from "lucide-react";
 
 /* ── Contribution Calendar Component ────────────────────────── */
@@ -484,22 +485,18 @@ export default function HomePage() {
               </Link>
 
               <Link
-                href={
-                  problems.length > 0
-                    ? `/problems/${problems[Math.floor(Math.random() * problems.length)].slug}`
-                    : "/problems"
-                }
+                href="/arena"
                 className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-[6px] shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
-                  <Plus className="w-5 h-5 text-[#d67aff] group-hover:scale-110 transition-transform" />
-                  <span className="text-[9px] uppercase font-mono font-black px-2 py-0.5 rounded border-2 border-black bg-[#7a83ff] text-white shadow-[1px_1px_0px_0px_#000]">
-                    Random
+                  <Swords className="w-5 h-5 text-[#f85149] group-hover:scale-110 transition-transform" />
+                  <span className="text-[9px] uppercase font-mono font-black px-2 py-0.5 rounded border-2 border-black bg-[#f85149] text-white shadow-[1px_1px_0px_0px_#000] animate-pulse">
+                    Live
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-foreground">Shuffle Coding</h4>
-                  <p className="text-[11px] text-muted-foreground font-bold">Choose a random puzzle to solve</p>
+                  <h4 className="text-xs font-black text-foreground">The Arena</h4>
+                  <p className="text-[11px] text-muted-foreground font-bold">1v1 Real-time Coding Battles</p>
                 </div>
               </Link>
             </div>

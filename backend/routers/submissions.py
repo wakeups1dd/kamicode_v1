@@ -15,6 +15,7 @@ from models import Problem, Submission, SubmissionStatus, AIAnalysis, User, User
 from schemas import SubmissionCreate, SubmissionResponse, SubmissionWithAnalysis
 from config import settings
 from auth import get_current_user
+from arena_state import arena_manager
 import ai_service
 
 router = APIRouter(prefix="/api/submissions", tags=["submissions"])
@@ -209,6 +210,25 @@ async def _execute_submission(
                 submission.status = SubmissionStatus.WRONG_ANSWER
 
         db.commit()
+
+        # Arena Integration: Broadcast result to opponent if user is in a match
+        if submission.user_id:
+            import asyncio
+            match_id = arena_manager.user_to_match.get(submission.user_id)
+            if match_id:
+                asyncio.create_task(arena_manager.broadcast_to_match(match_id, {
+                    "type": "opponent_evaluated",
+                    "user_id": submission.user_id,
+                    "status": submission.status.value if hasattr(submission.status, 'value') else submission.status,
+                    "passed_count": passed_count,
+                    "total_count": len(test_cases)
+                }))
+                if submission.status == SubmissionStatus.ACCEPTED:
+                    asyncio.create_task(arena_manager.broadcast_to_match(match_id, {
+                        "type": "match_ended",
+                        "winner_id": submission.user_id,
+                        "reason": "all_tests_passed"
+                    }))
 
         # Update user streak if accepted
         if submission.status == SubmissionStatus.ACCEPTED and submission.user_id:

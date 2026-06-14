@@ -62,6 +62,20 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+// ---------- Auth ----------
+
+export async function getCurrentUser() {
+  if (isBypass) {
+    return { id: "dev-user-id" };
+  }
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user || null;
+  } catch (err) {
+    return null;
+  }
+}
+
 // ---------- Problems ----------
 
 export async function listProblems(
