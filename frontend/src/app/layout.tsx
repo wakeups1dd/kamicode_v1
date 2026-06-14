@@ -3,6 +3,7 @@ import { DM_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import { AuthProvider } from "@/context/AuthContext";
+import { BadgeToaster } from "@/components/BadgeToaster";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           <Sidebar />
           <main className="flex-1 overflow-y-auto">{children}</main>
+          <BadgeToaster />
         </AuthProvider>
       </body>
     </html>

@@ -110,3 +110,21 @@ export interface LeaderboardEntry {
   current_streak: number;
   longest_streak: number;
 }
+
+export interface BadgeResponse {
+  id: number;
+  name: string;
+  description: string;
+  icon_name: string;
+  condition_type: string;
+  condition_value: number;
+  created_at?: string;
+}
+
+export interface UserBadgeResponse {
+  id: number;
+  user_id: string;
+  badge: BadgeResponse;
+  awarded_at?: string;
+}
+

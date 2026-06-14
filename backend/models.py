@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Float, JSON, Enum as SQLEnum, ForeignKey, Date
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from database import Base
 import enum
 
@@ -146,3 +147,37 @@ class DailyChallenge(Base):
     problem_id = Column(Integer, ForeignKey("problems.id", ondelete="CASCADE"))
     date = Column(Date, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Badge(Base):
+    """System badges that users can unlock."""
+    __tablename__ = "badges"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(255), unique=True, nullable=False)
+    description = Column(String(500), nullable=False)
+    icon_name = Column(String(50), nullable=False)  # e.g. 'Swords', 'Flame', 'Trophy'
+    condition_type = Column(String(50), nullable=False) # 'total_solves', 'arena_wins', 'streak'
+    condition_value = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserBadge(Base):
+    """Tracks which user unlocked which badge."""
+    __tablename__ = "user_badges"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    badge_id = Column(Integer, ForeignKey("badges.id", ondelete="CASCADE"), index=True)
+    awarded_at = Column(DateTime(timezone=True), server_default=func.now())
+    badge = relationship("Badge")
+
+
+class UserStat(Base):
+    """General user stats tracked continuously, e.g., for Arena."""
+    __tablename__ = "user_stats"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
+    arena_matches = Column(Integer, default=0)
+    arena_wins = Column(Integer, default=0)

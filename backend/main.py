@@ -8,8 +8,8 @@ from contextlib import asynccontextmanager
 
 from config import settings
 from database import engine, Base
-from models import Problem, Submission, User, AIAnalysis  # noqa: F401 — ensures tables are registered
-from routers import problems, submissions, analysis, cohorts, leaderboard, streaks, arena
+from models import Problem, Submission, User, AIAnalysis, Badge, UserBadge, UserStat  # noqa: F401 — ensures tables are registered
+from routers import problems, submissions, analysis, cohorts, leaderboard, streaks, arena, badges
 
 
 @asynccontextmanager
@@ -50,6 +50,7 @@ app.include_router(cohorts.router)
 app.include_router(leaderboard.router)
 app.include_router(streaks.router)
 app.include_router(arena.router)
+app.include_router(badges.router)
 
 
 @app.get("/")

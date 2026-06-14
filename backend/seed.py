@@ -4,7 +4,7 @@ Run with: python seed.py
 """
 
 from database import SessionLocal, engine, Base
-from models import Problem, Difficulty
+from models import Problem, Difficulty, Badge
 
 # Ensure tables exist
 Base.metadata.create_all(bind=engine)
@@ -488,25 +488,70 @@ height = list(map(int, input().split()))
     },
 ]
 
+SEED_BADGES = [
+    {
+        "name": "First Blood",
+        "description": "Solve your first problem on KamiCode.",
+        "icon_name": "Flame",
+        "condition_type": "total_solves",
+        "condition_value": 1
+    },
+    {
+        "name": "On Fire",
+        "description": "Reach a 3-day solve streak.",
+        "icon_name": "Zap",
+        "condition_type": "streak",
+        "condition_value": 3
+    },
+    {
+        "name": "Gladiator",
+        "description": "Win your first Arena match.",
+        "icon_name": "Swords",
+        "condition_type": "arena_wins",
+        "condition_value": 1
+    },
+    {
+        "name": "Arena Champion",
+        "description": "Win 5 Arena matches.",
+        "icon_name": "Trophy",
+        "condition_type": "arena_wins",
+        "condition_value": 5
+    },
+    {
+        "name": "Code Master",
+        "description": "Solve 10 problems total.",
+        "icon_name": "Crown",
+        "condition_type": "total_solves",
+        "condition_value": 10
+    }
+]
+
 
 def seed():
     db = SessionLocal()
     try:
         existing_count = db.query(Problem).count()
-        if existing_count > 0:
-            print(f"Database already has {existing_count} problems. Skipping seed.")
-            print("To re-seed, delete kamicode.db and run again.")
-            return
+        if existing_count == 0:
+            for data in SEED_PROBLEMS:
+                problem = Problem(**data)
+                db.add(problem)
+            db.commit()
+            print(f"Successfully seeded {len(SEED_PROBLEMS)} problems:")
+            for p in SEED_PROBLEMS:
+                diff_label = {"easy": "[EASY]  ", "medium": "[MEDIUM]", "hard": "[HARD]  "}.get(p["difficulty"].value, "[?]     ")
+                print(f"  {diff_label} {p['title']} [{p['topic']}]")
+        else:
+            print(f"Database already has {existing_count} problems. Skipping problem seed.")
 
-        for data in SEED_PROBLEMS:
-            problem = Problem(**data)
-            db.add(problem)
-
-        db.commit()
-        print(f"Successfully seeded {len(SEED_PROBLEMS)} problems:")
-        for p in SEED_PROBLEMS:
-            diff_label = {"easy": "[EASY]  ", "medium": "[MEDIUM]", "hard": "[HARD]  "}.get(p["difficulty"].value, "[?]     ")
-            print(f"  {diff_label} {p['title']} [{p['topic']}]")
+        existing_badge_count = db.query(Badge).count()
+        if existing_badge_count == 0:
+            for badge_data in SEED_BADGES:
+                badge = Badge(**badge_data)
+                db.add(badge)
+            db.commit()
+            print(f"Successfully seeded {len(SEED_BADGES)} badges.")
+        else:
+            print(f"Database already has {existing_badge_count} badges. Skipping badge seed.")
     finally:
         db.close()
 

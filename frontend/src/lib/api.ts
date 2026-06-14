@@ -7,6 +7,8 @@ import type {
   CohortDetailResponse,
   UserStreakResponse,
   LeaderboardEntry,
+  BadgeResponse,
+  UserBadgeResponse,
 } from "./types";
 import { supabase } from "./supabase";
 
@@ -182,4 +184,14 @@ export async function joinCohort(inviteCode: string): Promise<CohortResponse> {
 
 export async function getMyStreak(): Promise<UserStreakResponse> {
   return apiFetch<UserStreakResponse>("/api/streaks/me");
+}
+
+// ---------- Badges ----------
+
+export async function getMyBadges(): Promise<UserBadgeResponse[]> {
+  return apiFetch<UserBadgeResponse[]>("/api/badges/me");
+}
+
+export async function getAllBadges(): Promise<BadgeResponse[]> {
+  return apiFetch<BadgeResponse[]>("/api/badges/all");
 }

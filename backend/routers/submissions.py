@@ -229,13 +229,29 @@ async def _execute_submission(
                         "winner_id": submission.user_id,
                         "reason": "all_tests_passed"
                     }))
+                    
+                    # Update arena_wins for the winner
+                    from models import UserStat
+                    stat = db.query(UserStat).filter(UserStat.user_id == submission.user_id).first()
+                    if not stat:
+                        stat = UserStat(user_id=submission.user_id, arena_matches=1, arena_wins=1)
+                        db.add(stat)
+                    else:
+                        stat.arena_wins += 1
+                        stat.arena_matches += 1
+                    db.commit()
 
         # Update user streak if accepted
         if submission.status == SubmissionStatus.ACCEPTED and submission.user_id:
             try:
                 _update_user_streak(db, submission.user_id)
+                # Auto-evaluate badges after a successful submission
+                from routers.badges import evaluate_badges
+                new_badges = evaluate_badges(submission.user_id, db)
+                if new_badges:
+                    print(f"[*] User {submission.user_id} unlocked {len(new_badges)} new badges!")
             except Exception as se:
-                print(f"[ERROR] Failed to update user streak: {se}")
+                print(f"[ERROR] Failed to update user streak/badges: {se}")
 
         # Auto-trigger AI analysis for accepted submissions
         if submission.status == SubmissionStatus.ACCEPTED:

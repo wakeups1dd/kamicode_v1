@@ -209,3 +209,26 @@ class LeaderboardEntry(BaseModel):
     total_solves: int
     current_streak: int
     longest_streak: int
+
+
+# ---------- Badge Schemas ----------
+
+class BadgeResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    icon_name: str
+    condition_type: str
+    condition_value: int
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class UserBadgeResponse(BaseModel):
+    id: int
+    user_id: str
+    badge: BadgeResponse
+    awarded_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}

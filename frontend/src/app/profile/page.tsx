@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { listMySubmissions, listProblems, getMyStreak } from "@/lib/api";
 import type { SubmissionResponse, ProblemSummary, UserStreakResponse } from "@/lib/types";
 import Link from "next/link";
+import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { User, Zap, Code, ShieldAlert, Award, Calendar, ExternalLink, Activity, AwardIcon } from "lucide-react";
 
 export default function ProfilePage() {
@@ -241,6 +242,9 @@ export default function ProfilePage() {
           </div>
 
         </div>
+
+        {/* Trophy Cabinet */}
+        <TrophyCabinet />
 
         {/* Historical Submissions Logs */}
         <div className="bg-secondary-background border-4 border-black rounded-xl shadow-[4px_4px_0px_#000] overflow-hidden">
