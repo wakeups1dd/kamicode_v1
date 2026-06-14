@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     judge0_api_key: str = ""
     judge0_api_host: str = "judge0-ce.p.rapidapi.com"
 
+    # Piston (if code_runner_mode == "piston")
+    piston_base_url: str = "https://emkc.org/api/v2/piston"
+
+    # JDoodle (if code_runner_mode == "jdoodle")
+    jdoodle_client_id: str = ""
+    jdoodle_client_secret: str = ""
+
     # Server
     cors_origins: str = "*"  # comma-separated origins for production
     debug: bool = True

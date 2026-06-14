@@ -34,6 +34,14 @@ async def _run_single_test(source_code: str, test_input: str, expected_output: s
             time_limit=time_limit_ms / 1000.0,
             memory_limit=memory_limit_kb,
         )
+    elif settings.code_runner_mode == "piston":
+        from piston_client import run_test_case_piston
+        return await run_test_case_piston(
+            source_code=source_code,
+            test_input=test_input,
+            expected_output=expected_output,
+            language=language,
+        )
     else:
         from code_runner import run_test_case_local
         result = await run_test_case_local(

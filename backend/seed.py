@@ -30,7 +30,7 @@ You can return the answer in any order. Print the two indices separated by a spa
             {"input": "2 7 11 15\n9", "expected_output": "0 1"},
             {"input": "3 2 4\n6", "expected_output": "1 2"},
             {"input": "3 3\n6", "expected_output": "0 1"},
-            {"input": "1 5 3 7 2\n9", "expected_output": "1 3"},
+            {"input": "1 5 3 7 2\n9", "expected_output": "3 4"},
             {"input": "-1 -2 -3 -4 -5\n-8", "expected_output": "2 4"},
         ],
         "starter_code": """# Read the array and target from stdin
