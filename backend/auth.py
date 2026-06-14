@@ -9,10 +9,26 @@ from fastapi import Request, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Optional
 from jose import jwt, JWTError
+import urllib.request
+import json
+from functools import lru_cache
 
 from database import get_db
 from models import User
 from config import settings
+
+
+@lru_cache(maxsize=1)
+def get_supabase_jwks():
+    if not settings.supabase_url:
+        return None
+    jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
+    try:
+        with urllib.request.urlopen(jwks_url) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except Exception as e:
+        print(f"Failed to fetch JWKS: {e}")
+        return None
 
 
 async def get_current_user_id(request: Request) -> Optional[str]:
@@ -30,11 +46,22 @@ async def get_current_user_id(request: Request) -> Optional[str]:
         
         token = auth_header.split(" ")[1]
         try:
-            # Supabase tokens are signed with the project's JWT secret using HS256
+            # Extract the algorithm from the token header (fallback to HS256)
+            unverified_header = jwt.get_unverified_header(token)
+            alg = unverified_header.get("alg", "HS256")
+            
+            # Supabase tokens are typically signed with the project's JWT secret using HS256
+            # but may use RS256 or ES256 in newer projects
+            key = settings.supabase_jwt_secret
+            if alg != "HS256":
+                jwks = get_supabase_jwks()
+                if jwks:
+                    key = jwks
+
             payload = jwt.decode(
                 token,
-                settings.supabase_jwt_secret,
-                algorithms=["HS256"],
+                key,
+                algorithms=[alg],
                 options={"verify_aud": False}
             )
             sub = payload.get("sub")
@@ -45,6 +72,11 @@ async def get_current_user_id(request: Request) -> Optional[str]:
                 )
             return sub
         except JWTError as e:
+            try:
+                unverified_header = jwt.get_unverified_header(token)
+                print(f"JWT Header: {unverified_header}")
+            except Exception as e_inner:
+                print(f"Failed to get unverified header: {e_inner}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Invalid authentication token: {str(e)}",
@@ -96,10 +128,19 @@ async def get_current_user(
             token = auth_header.split(" ")[1]
             try:
                 if settings.supabase_jwt_secret and not settings.bypass_auth:
+                    unverified_header = jwt.get_unverified_header(token)
+                    alg = unverified_header.get("alg", "HS256")
+                    
+                    key = settings.supabase_jwt_secret
+                    if alg != "HS256":
+                        jwks = get_supabase_jwks()
+                        if jwks:
+                            key = jwks
+                            
                     payload = jwt.decode(
                         token,
-                        settings.supabase_jwt_secret,
-                        algorithms=["HS256"],
+                        key,
+                        algorithms=[alg],
                         options={"verify_aud": False}
                     )
                 else:
