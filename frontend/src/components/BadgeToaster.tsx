@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getMyBadges } from "@/lib/api";
 import { Award, Flame, Trophy, Star, Crown, Swords, X } from "lucide-react";
 import type { UserBadgeResponse } from "@/lib/types";
 
 export function BadgeToaster() {
   const [toasts, setToasts] = useState<UserBadgeResponse[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     // Only run if user is logged in. 
@@ -23,6 +25,13 @@ export function BadgeToaster() {
           
           const newIds = [...storedIds, ...newBadges.map(b => b.badge.id)];
           localStorage.setItem("seen_badges", JSON.stringify(newIds));
+
+          // Auto dismiss each new badge after 5 seconds
+          newBadges.forEach(b => {
+            setTimeout(() => {
+              setToasts(prev => prev.filter(t => t.id !== b.id));
+            }, 5000);
+          });
         }
       } catch (err) {
         // ignore if not logged in
@@ -36,8 +45,13 @@ export function BadgeToaster() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const getIcon = (name: string) => {
-    const props = { className: "w-10 h-10 text-main fill-current" };
+  const handleAwesomeClick = (id: number) => {
+    removeToast(id);
+    router.push("/profile");
+  };
+
+  const getIcon = (name: string, customClass: string = "w-10 h-10 text-main fill-current") => {
+    const props = { className: customClass };
     switch (name) {
       case "Swords": return <Swords {...props} />;
       case "Flame": return <Flame {...props} />;
@@ -51,26 +65,40 @@ export function BadgeToaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-3">
-      {toasts.map((tb) => (
-        <div key={tb.id} className="animate-fade bg-secondary-background border-4 border-black p-4 rounded-xl shadow-[4px_4px_0px_#000] w-80 relative select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade">
+      {toasts.map((tb, index) => (
+        <div 
+          key={tb.id} 
+          className="absolute bg-secondary-background border-4 border-black p-8 rounded-2xl shadow-[8px_8px_0px_#000] w-[90%] max-w-sm text-center flex flex-col items-center animate-slide-up"
+          style={{ zIndex: 50 + index }}
+        >
           <button 
             onClick={() => removeToast(tb.id)}
-            className="absolute top-2 right-2 text-zinc-400 hover:text-black transition-colors"
+            className="absolute top-4 right-4 text-zinc-400 hover:text-black transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-6 h-6" />
           </button>
           
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0 bg-main/10 p-2 rounded-lg border-2 border-main">
-              {getIcon(tb.badge.icon_name)}
-            </div>
-            <div>
-              <div className="text-[10px] font-black uppercase font-mono text-main mb-0.5">Badge Unlocked!</div>
-              <div className="font-black text-sm text-foreground leading-tight">{tb.badge.name}</div>
-              <div className="text-[10px] font-mono text-zinc-500 leading-tight mt-1">{tb.badge.description}</div>
-            </div>
+          <div className="flex-shrink-0 bg-main/20 p-6 rounded-full border-4 border-main mb-6 transform hover:scale-110 transition-transform duration-300">
+            {getIcon(tb.badge.icon_name, "w-24 h-24 text-main fill-current")}
           </div>
+          
+          <div className="text-xs font-black uppercase font-mono text-main mb-2 tracking-widest">
+            Badge Unlocked!
+          </div>
+          <div className="font-black text-3xl text-foreground leading-tight mb-3">
+            {tb.badge.name}
+          </div>
+          <div className="text-sm font-mono text-zinc-500 leading-relaxed mb-6">
+            {tb.badge.description}
+          </div>
+          
+          <button 
+            onClick={() => handleAwesomeClick(tb.id)}
+            className="w-full py-3 bg-main text-black font-black font-mono border-2 border-black rounded-lg hover:-translate-y-1 hover:shadow-[4px_4px_0px_#000] active:translate-y-0 active:shadow-none transition-all uppercase tracking-wide"
+          >
+            Awesome!
+          </button>
         </div>
       ))}
     </div>
