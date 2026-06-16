@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useRef, use } from "react";
 import { useRouter } from "next/navigation";
-import { getProblem, submitCode, getCurrentUser } from "@/lib/api";
-import type { ProblemDetail, SubmissionResponse } from "@/lib/types";
+import { getProblem, submitCode, getCurrentUser, getAIAnalysis } from "@/lib/api";
+import type { ProblemDetail, SubmissionResponse, AIAnalysisResponse } from "@/lib/types";
 
 import ProblemPanel from "@/components/ProblemPanel";
 import CodeEditor from "@/components/CodeEditor";
 import TerminalConsole from "@/components/TerminalConsole";
+import AIAnalysisCard from "@/components/AIAnalysisCard";
 import { Loader2, Swords, Trophy, Activity, LogOut } from "lucide-react";
 
 export default function ArenaBattle({ params }: { params: Promise<{ match_id: string }> }) {
@@ -28,13 +29,16 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
   const [opponentTotal, setOpponentTotal] = useState(0);
   const [matchResult, setMatchResult] = useState<"won" | "lost" | "draw" | null>(null);
 
-  // Terminal State
+  // Terminal & AI State
   const [isRunning, setIsRunning] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState<{
     status: "idle" | "running" | "success" | "error";
     data?: any;
     error?: string;
   }>({ status: "idle" });
+  
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     let socket: WebSocket;
@@ -110,12 +114,36 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
     }
   };
 
+  const pollAIAnalysis = async (submissionId: number) => {
+    setIsAnalyzing(true);
+    setAiAnalysis(null);
+    const maxRetries = 20;
+    const intervalMs = 2000;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const analysis = await getAIAnalysis(submissionId);
+        if (analysis && analysis.time_complexity) {
+          setAiAnalysis(analysis);
+          setIsAnalyzing(false);
+          return;
+        }
+      } catch (err) {
+        // AI analysis is still processing
+      }
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+    setIsAnalyzing(false);
+  };
+
   const handleRunCode = async (isSubmit: boolean = false) => {
     if (!problem || isRunning || matchResult) return;
     
     setIsRunning(true);
     setTerminalOutput({ status: "running" });
     setActiveTab("submissions");
+    setAiAnalysis(null);
+    setIsAnalyzing(false);
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "evaluating" }));
@@ -143,6 +171,10 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
         status: finalResult.status === "accepted" ? "success" : "error",
         data: finalResult
       });
+
+      if (finalResult.status === "accepted") {
+        pollAIAnalysis(result.id);
+      }
 
     } catch (err: any) {
       setTerminalOutput({ status: "error", error: err.message });
@@ -251,17 +283,28 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
                   {isRunning ? "Running..." : "Submit"}
                 </button>
              </div>
-             {terminalOutput.data || isRunning ? (
-               <TerminalConsole
-                 submission={terminalOutput.data || null}
-                 isLoading={isRunning}
-               />
-             ) : (
-               <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-3">
-                 <span className="text-4xl">⌨</span>
-                 <span className="text-xs font-mono font-bold uppercase tracking-wider">Click Submit to see results</span>
-               </div>
-             )}
+             <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 bg-background relative scrollbar-thin">
+               {terminalOutput.data || isRunning ? (
+                 <div className="h-full flex flex-col p-4 space-y-4">
+                   <div className="flex-shrink-0">
+                     <TerminalConsole
+                       submission={terminalOutput.data || null}
+                       isLoading={isRunning}
+                     />
+                   </div>
+                   {(isAnalyzing || aiAnalysis) && (
+                     <div className="flex-shrink-0">
+                       <AIAnalysisCard analysis={aiAnalysis} loading={isAnalyzing} />
+                     </div>
+                   )}
+                 </div>
+               ) : (
+                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-3">
+                   <span className="text-4xl">⌨</span>
+                   <span className="text-xs font-mono font-bold uppercase tracking-wider">Click Submit to see results</span>
+                 </div>
+               )}
+             </div>
           </div>
         </div>
       </div>
