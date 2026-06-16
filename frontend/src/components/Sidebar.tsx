@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import SearchModal from "./SearchModal";
+import SettingsModal from "./SettingsModal";
 
 /* ── Icon components (inline SVGs to avoid extra deps) ──────── */
 
@@ -113,6 +115,8 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { user, signOut } = useAuth();
 
   // Don't show sidebar on auth page or problem arena pages (full-screen editor)
@@ -197,6 +201,7 @@ export default function Sidebar() {
       <div className="px-3 py-4 space-y-2 border-t-4 border-black bg-background/25">
         {/* Search */}
         <button
+          onClick={() => setIsSearchOpen(true)}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
             }`}
           title={collapsed ? "Search" : undefined}
@@ -207,6 +212,7 @@ export default function Sidebar() {
 
         {/* Settings */}
         <button
+          onClick={() => setIsSettingsOpen(true)}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
             }`}
           title={collapsed ? "Settings" : undefined}
@@ -264,6 +270,9 @@ export default function Sidebar() {
           )}
         </div>
       </div>
+
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </aside>
   );
 }
