@@ -95,7 +95,7 @@ export function BadgeToaster() {
           
           <button 
             onClick={() => handleAwesomeClick(tb.id)}
-            className="w-full py-3 bg-main text-black font-black font-mono border-2 border-black rounded-lg hover:-translate-y-1 hover:shadow-[4px_4px_0px_#000] active:translate-y-0 active:shadow-none transition-all uppercase tracking-wide"
+            className="w-full py-3 bg-main text-black font-black font-mono border-2 border-black rounded-2xl hover:-translate-y-1 hover:shadow-[4px_4px_0px_#000] active:translate-y-0 active:shadow-none transition-all uppercase tracking-wide"
           >
             Awesome!
           </button>

@@ -19,12 +19,12 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
           <Sparkles className="w-5 h-5 text-[#a855f7] dark:text-[#c084fc] animate-spin" />
           <span className="font-mono font-bold text-sm text-foreground">AI Coach is analyzing your solution...</span>
         </div>
-        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-md w-3/4" />
-        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-md w-1/2" />
+        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-3/4" />
+        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-1/2" />
         <div className="grid grid-cols-3 gap-4 pt-2">
-          <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
-          <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
-          <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
+          <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+          <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+          <div className="h-16 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
@@ -49,7 +49,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
           <Sparkles className="w-5 h-5 fill-current" />
           <span className="font-mono font-black text-sm uppercase tracking-wider">AI EVALUATION COACH</span>
         </div>
-        <span className="font-mono text-xs font-bold bg-white dark:bg-zinc-900 border-2 border-black text-black dark:text-white px-2 py-0.5 rounded-[4px]">
+        <span className="font-mono text-xs font-bold bg-white dark:bg-zinc-900 border-2 border-black text-black dark:text-white px-2 py-0.5 rounded-xl">
           v2.0
         </span>
       </div>
@@ -57,7 +57,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
       <div className="p-5 md:p-6 space-y-6">
         {/* Complexity & Approach Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-zinc-50 dark:bg-zinc-900 border-2 border-black p-4 rounded-lg shadow-[3px_3px_0px_0px_#000] flex items-center gap-3">
+          <div className="bg-zinc-50 dark:bg-zinc-900 border-2 border-black p-4 rounded-2xl shadow-[3px_3px_0px_0px_#000] flex items-center gap-3">
             <Clock className="w-8 h-8 text-[#a855f7] dark:text-[#c084fc] flex-shrink-0" />
             <div>
               <div className="text-[10px] uppercase font-black text-zinc-500">Time Complexity</div>
@@ -65,7 +65,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
             </div>
           </div>
 
-          <div className="bg-zinc-50 dark:bg-zinc-900 border-2 border-black p-4 rounded-lg shadow-[3px_3px_0px_0px_#000] flex items-center gap-3">
+          <div className="bg-zinc-50 dark:bg-zinc-900 border-2 border-black p-4 rounded-2xl shadow-[3px_3px_0px_0px_#000] flex items-center gap-3">
             <Database className="w-8 h-8 text-[#a855f7] dark:text-[#c084fc] flex-shrink-0" />
             <div>
               <div className="text-[10px] uppercase font-black text-zinc-500">Space Complexity</div>
@@ -73,7 +73,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
             </div>
           </div>
 
-          <div className="bg-zinc-50 dark:bg-zinc-900 border-2 border-black p-4 rounded-lg shadow-[3px_3px_0px_0px_#000] flex items-center gap-3">
+          <div className="bg-zinc-50 dark:bg-zinc-900 border-2 border-black p-4 rounded-2xl shadow-[3px_3px_0px_0px_#000] flex items-center gap-3">
             <Sparkles className="w-8 h-8 text-[#a855f7] dark:text-[#c084fc] flex-shrink-0" />
             <div className="min-w-0">
               <div className="text-[10px] uppercase font-black text-zinc-500">Approach</div>
@@ -84,7 +84,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
 
         {/* Approach Explanation */}
         {analysis.approach_explanation && (
-          <div className="bg-[#e2d4f7]/30 dark:bg-[#2f2042]/30 border-2 border-black p-4 rounded-lg">
+          <div className="bg-[#e2d4f7]/30 dark:bg-[#2f2042]/30 border-2 border-black p-4 rounded-2xl">
             <span className="font-mono font-black text-xs text-[#a855f7] dark:text-[#c084fc] uppercase tracking-wider block mb-1">
               Methodology
             </span>
@@ -100,7 +100,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             {/* Efficiency */}
-            <div className="border-2 border-black p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 flex flex-col gap-2 shadow-[2px_2px_0px_0px_#000]">
+            <div className="border-2 border-black p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 flex flex-col gap-2 shadow-[2px_2px_0px_0px_#000]">
               <div className="flex justify-between items-center text-xs font-bold">
                 <span>Efficiency</span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-black ${getScoreColor(analysis.efficiency_score || 0)}`}>
@@ -116,7 +116,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
             </div>
 
             {/* Quality */}
-            <div className="border-2 border-black p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 flex flex-col gap-2 shadow-[2px_2px_0px_0px_#000]">
+            <div className="border-2 border-black p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 flex flex-col gap-2 shadow-[2px_2px_0px_0px_#000]">
               <div className="flex justify-between items-center text-xs font-bold">
                 <span>Code Quality</span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-black ${getScoreColor(analysis.code_quality_score || 0)}`}>
@@ -132,7 +132,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
             </div>
 
             {/* Overall */}
-            <div className="border-2 border-black p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 flex flex-col gap-2 shadow-[2px_2px_0px_0px_#000]">
+            <div className="border-2 border-black p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 flex flex-col gap-2 shadow-[2px_2px_0px_0px_#000]">
               <div className="flex justify-between items-center text-xs font-bold">
                 <span>Overall Rating</span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-black ${getScoreColor(analysis.overall_score || 0)}`}>
@@ -189,7 +189,7 @@ export default function AIAnalysisCard({ analysis, loading }: AIAnalysisCardProp
 
         {/* Expandable Optimized Hint */}
         {analysis.optimized_solution_hint && (
-          <div className="border-2 border-black rounded-lg overflow-hidden bg-zinc-50 dark:bg-zinc-900 shadow-[2px_2px_0px_0px_#000]">
+          <div className="border-2 border-black rounded-2xl overflow-hidden bg-zinc-50 dark:bg-zinc-900 shadow-[2px_2px_0px_0px_#000]">
             <button
               onClick={() => setShowHint(!showHint)}
               className="w-full flex items-center justify-between px-4 py-3 bg-zinc-100 dark:bg-zinc-850 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-xs font-black uppercase text-foreground transition-colors"

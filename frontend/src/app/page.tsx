@@ -224,7 +224,7 @@ function GitTimeline({ submissions, problemMap }: { submissions: SubmissionRespo
               <span className="h-1.5 w-1.5 rounded-full bg-black" />
             </span>
 
-            <div className="bg-secondary-background border-2 border-black rounded-[6px] p-4 shadow-[2px_2px_0px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all relative">
+            <div className="bg-secondary-background border-2 border-black rounded-xl p-4 shadow-[2px_2px_0px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all relative">
               <div className="flex items-center justify-between gap-4">
                 <Link
                   href={`/problems/${c.slug}`}
@@ -312,7 +312,7 @@ function TopicLanguagesBar({
         <span>Topic Mastery</span>
       </h3>
 
-      <div className="flex h-4 w-full overflow-hidden border-2 border-black rounded-[6px] bg-background mb-5 shadow-[1px_1px_0px_0px_#000]">
+      <div className="flex h-4 w-full overflow-hidden border-2 border-black rounded-xl bg-background mb-5 shadow-[1px_1px_0px_0px_#000]">
         {displayTopics.map((t, idx) => {
           const widthPct = barSum > 0 ? (t.pct / barSum) * 100 : 25;
           return (
@@ -409,7 +409,7 @@ export default function HomePage() {
               <span className="hover:underline cursor-pointer">Coder</span>
               <span>/</span>
               <span className="text-foreground font-black hover:underline cursor-pointer">dashboard</span>
-              <span className="text-[9px] px-2 py-0.5 rounded-[4px] border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
+              <span className="text-[9px] px-2 py-0.5 rounded-xl border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
                 Public
               </span>
             </div>
@@ -423,7 +423,7 @@ export default function HomePage() {
 
           {/* Action Counters */}
           <div className="flex items-center gap-3 flex-wrap select-none">
-            <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
+            <div className="flex items-center rounded-xl border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
               <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-main text-main-foreground font-black border-r-2 border-black">
                 <Flame className="w-3.5 h-3.5" />
                 <span>STREAK</span>
@@ -433,7 +433,7 @@ export default function HomePage() {
               </span>
             </div>
 
-            <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
+            <div className="flex items-center rounded-xl border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
               <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-[#ffbf00] text-black font-black border-r-2 border-black">
                 <Trophy className="w-3.5 h-3.5" />
                 <span>SOLVED</span>
@@ -443,7 +443,7 @@ export default function HomePage() {
               </span>
             </div>
 
-            <div className="flex items-center rounded-[6px] border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
+            <div className="flex items-center rounded-xl border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
               <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-[#7a83ff] text-white font-black border-r-2 border-black">
                 <Award className="w-3.5 h-3.5" />
                 <span>SOLVES</span>
@@ -457,13 +457,13 @@ export default function HomePage() {
 
         {/* Navigation Tabs */}
         <div className="max-w-[1200px] mx-auto mt-6 flex gap-2.5">
-          <button className="flex items-center gap-2 px-4 py-2 text-xs font-black bg-main text-main-foreground border-2 border-black rounded-[6px] shadow-[2px_2px_0px_0px_#000]">
+          <button className="flex items-center gap-2 px-4 py-2 text-xs font-black bg-main text-main-foreground border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000]">
             <BookOpen className="w-4 h-4" />
             <span>Overview</span>
           </button>
           <Link
             href="/problems"
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-secondary-background text-foreground border-2 border-transparent hover:border-black rounded-[6px] transition-all hover:shadow-[2px_2px_0px_0px_#000]"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-secondary-background text-foreground border-2 border-transparent hover:border-black rounded-xl transition-all hover:shadow-[2px_2px_0px_0px_#000]"
           >
             <GitPullRequest className="w-4 h-4 text-muted-foreground" />
             <span>Problems</span>
@@ -487,7 +487,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link
                 href={problems[0] ? `/problems/${problems[0].slug}` : "/problems"}
-                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-[6px] shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
                   <Play className="w-5 h-5 text-[#8bd600] group-hover:scale-110 transition-transform" />
@@ -505,7 +505,7 @@ export default function HomePage() {
 
               <Link
                 href="/problems"
-                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-[6px] shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
                   <Code className="w-5 h-5 text-[#7a83ff] group-hover:scale-110 transition-transform" />
@@ -521,7 +521,7 @@ export default function HomePage() {
 
               <Link
                 href="/arena"
-                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-[6px] shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
                   <Swords className="w-5 h-5 text-[#f85149] group-hover:scale-110 transition-transform" />
@@ -557,8 +557,8 @@ export default function HomePage() {
               <span>Division Info</span>
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-2 border-2 border-black rounded-[6px] bg-background shadow-[1.5px_1.5px_0px_0px_#000]">
-                <div className="w-9 h-9 rounded-[4px] bg-main border-2 border-black flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-2 border-2 border-black rounded-xl bg-background shadow-[1.5px_1.5px_0px_0px_#000]">
+                <div className="w-9 h-9 rounded-xl bg-main border-2 border-black flex items-center justify-center flex-shrink-0">
                   <Star className="w-4 h-4 text-main-foreground animate-spin-slow" />
                 </div>
                 <div>
@@ -588,7 +588,7 @@ export default function HomePage() {
               <Terminal className="w-4 h-4 text-[#8bd600]" />
               <span>Actions Diagnostics</span>
             </h3>
-            <div className="bg-black border-2 border-black rounded-[6px] p-3.5 font-mono text-[10px] text-[#8bd600] space-y-1 select-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-black border-2 border-black rounded-xl p-3.5 font-mono text-[10px] text-[#8bd600] space-y-1 select-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               <div className="text-muted-foreground font-bold">$ curl -s http://localhost:8000/health</div>
               <div>{"{"}</div>
               <div className="pl-4">"status": "healthy",</div>

@@ -16,7 +16,7 @@ export default function CodeEditor({
   readOnly = false,
 }: CodeEditorProps) {
   return (
-    <div className="h-full w-full rounded-[6px] overflow-hidden border-2 border-black shadow-[3px_3px_0px_0px_#000]">
+    <div className="h-full w-full rounded-xl overflow-hidden border-2 border-black shadow-[3px_3px_0px_0px_#000]">
       <Editor
         height="100%"
         language={language}

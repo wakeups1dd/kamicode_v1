@@ -36,7 +36,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div 
-        className="bg-secondary-background border-4 border-black shadow-[8px_8px_0px_0px_#000] w-full max-w-xl rounded-[6px] overflow-hidden m-4 relative animate-in slide-in-from-top-4 zoom-in-95"
+        className="bg-secondary-background border-4 border-black shadow-[8px_8px_0px_0px_#000] w-full max-w-xl rounded-xl overflow-hidden m-4 relative animate-in slide-in-from-top-4 zoom-in-95"
         onClick={e => e.stopPropagation()}
       >
         <form onSubmit={handleSearch} className="flex items-center border-b-4 border-black bg-white">
@@ -59,10 +59,10 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
         <div className="p-4 bg-secondary-background">
           <p className="text-xs font-black text-muted-foreground uppercase tracking-wider mb-3">Quick Links</p>
           <div className="space-y-2">
-            <button onClick={() => { router.push("/problems"); onClose(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[4px] border-2 border-transparent hover:border-black hover:bg-main hover:text-main-foreground transition-colors font-bold text-sm text-left">
+            <button onClick={() => { router.push("/problems"); onClose(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 border-transparent hover:border-black hover:bg-main hover:text-main-foreground transition-colors font-bold text-sm text-left">
               Browse all problems
             </button>
-            <button onClick={() => { router.push("/leaderboard"); onClose(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[4px] border-2 border-transparent hover:border-black hover:bg-main hover:text-main-foreground transition-colors font-bold text-sm text-left">
+            <button onClick={() => { router.push("/leaderboard"); onClose(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 border-transparent hover:border-black hover:bg-main hover:text-main-foreground transition-colors font-bold text-sm text-left">
               View Leaderboard
             </button>
           </div>

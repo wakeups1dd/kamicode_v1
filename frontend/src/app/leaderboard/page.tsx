@@ -96,7 +96,7 @@ export default function LeaderboardPage() {
             <span>League</span>
             <span>/</span>
             <span className="text-foreground font-black hover:underline cursor-pointer">leaderboard</span>
-            <span className="text-[9px] px-2 py-0.5 rounded-[4px] border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
+            <span className="text-[9px] px-2 py-0.5 rounded-xl border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
               rankings
             </span>
           </div>
@@ -116,10 +116,10 @@ export default function LeaderboardPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           
           {/* Tabs */}
-          <div className="flex bg-secondary-background border-2 border-black p-1 rounded-lg shadow-[2.5px_2.5px_0px_0px_#000] w-full sm:w-auto">
+          <div className="flex bg-secondary-background border-2 border-black p-1 rounded-2xl shadow-[2.5px_2.5px_0px_0px_#000] w-full sm:w-auto">
             <button
               onClick={() => handleToggle(true)}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 text-xs font-black uppercase rounded-md transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 text-xs font-black uppercase rounded-xl transition-all ${
                 isGlobal
                   ? "bg-main text-main-foreground border-2 border-black shadow-[1.5px_1.5px_0px_0px_#000]"
                   : "text-zinc-500 hover:text-black dark:hover:text-white"
@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
             </button>
             <button
               onClick={() => handleToggle(false)}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 text-xs font-black uppercase rounded-md transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 text-xs font-black uppercase rounded-xl transition-all ${
                 !isGlobal
                   ? "bg-main text-main-foreground border-2 border-black shadow-[1.5px_1.5px_0px_0px_#000]"
                   : "text-zinc-500 hover:text-black dark:hover:text-white"
@@ -149,7 +149,7 @@ export default function LeaderboardPage() {
                   <select
                     value={selectedCohort?.id || ""}
                     onChange={(e) => handleCohortChange(Number(e.target.value))}
-                    className="appearance-none w-full bg-secondary-background border-2 border-black text-foreground rounded-[6px] pl-4 pr-10 py-2.5 text-xs font-black cursor-pointer outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] transition-all"
+                    className="appearance-none w-full bg-secondary-background border-2 border-black text-foreground rounded-xl pl-4 pr-10 py-2.5 text-xs font-black cursor-pointer outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] transition-all"
                   >
                     {cohorts.map((cohort) => (
                       <option key={cohort.id} value={cohort.id}>
@@ -160,7 +160,7 @@ export default function LeaderboardPage() {
                   <ChevronDown className="w-4 h-4 text-foreground absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </>
               ) : (
-                <div className="text-xs font-mono font-bold text-zinc-500 bg-secondary-background border-2 border-black p-2.5 rounded-lg">
+                <div className="text-xs font-mono font-bold text-zinc-500 bg-secondary-background border-2 border-black p-2.5 rounded-2xl">
                   ⚠️ No cohorts joined yet.
                 </div>
               )}
@@ -170,7 +170,7 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Leaderboard Table Card */}
-        <div className="bg-secondary-background border-4 border-black rounded-lg shadow-[4px_4px_0px_0px_#000] overflow-hidden">
+        <div className="bg-secondary-background border-4 border-black rounded-2xl shadow-[4px_4px_0px_0px_#000] overflow-hidden">
           
           {/* Header */}
           <div className="bg-main border-b-4 border-black px-5 py-4 flex items-center justify-between">
@@ -270,7 +270,7 @@ export default function LeaderboardPage() {
 
                         {/* Solved Problems */}
                         <td className="py-4 px-5 text-center">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[6px] border-2 border-black bg-zinc-50 dark:bg-zinc-900 shadow-[1.5px_1.5px_0px_#000] font-mono font-black text-xs text-foreground">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border-2 border-black bg-zinc-50 dark:bg-zinc-900 shadow-[1.5px_1.5px_0px_#000] font-mono font-black text-xs text-foreground">
                             <Code className="w-3.5 h-3.5 text-[#a855f7] dark:text-[#c084fc]" />
                             <span>{row.total_solves}</span>
                           </div>
@@ -278,7 +278,7 @@ export default function LeaderboardPage() {
 
                         {/* Current Streak */}
                         <td className="py-4 px-5 text-center">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[6px] border-2 border-black bg-[#ffbf00]/15 dark:bg-[#ffbf00]/5 text-[#ffbf00] font-mono font-black text-xs">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border-2 border-black bg-[#ffbf00]/15 dark:bg-[#ffbf00]/5 text-[#ffbf00] font-mono font-black text-xs">
                             <Zap className="w-3.5 h-3.5 fill-current" />
                             <span>{row.current_streak}d</span>
                           </div>

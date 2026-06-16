@@ -13,7 +13,7 @@ import AIAnalysisCard from "@/components/AIAnalysisCard";
 const CodeEditor = dynamic(() => import("@/components/CodeEditor"), {
   ssr: false,
   loading: () => (
-    <div className="h-full flex items-center justify-center bg-background rounded-[6px] border-2 border-black">
+    <div className="h-full flex items-center justify-center bg-background rounded-xl border-2 border-black">
       <div className="w-6 h-6 rounded-full border-4 border-transparent border-t-main animate-spin" />
     </div>
   ),
@@ -121,7 +121,7 @@ export default function ProblemArenaPage({
   if (error || !problem) {
     return (
       <div className="h-full flex items-center justify-center bg-background">
-        <div className="bg-[#f85149]/10 border-2 border-black rounded-[6px] p-6 text-foreground font-bold max-w-md text-center shadow-[3px_3px_0px_0px_#000]">
+        <div className="bg-[#f85149]/10 border-2 border-black rounded-xl p-6 text-foreground font-bold max-w-md text-center shadow-[3px_3px_0px_0px_#000]">
           {error || "Problem not found"}
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function ProblemArenaPage({
           {/* Back to problems */}
           <Link
             href="/problems"
-            className="flex items-center gap-1 px-3 py-1 border-2 border-black rounded-[6px] bg-background text-foreground hover:bg-main hover:text-main-foreground shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[1.5px] active:translate-y-[1.5px] active:shadow-none transition-all text-xs font-black"
+            className="flex items-center gap-1 px-3 py-1 border-2 border-black rounded-xl bg-background text-foreground hover:bg-main hover:text-main-foreground shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[1.5px] active:translate-y-[1.5px] active:shadow-none transition-all text-xs font-black"
           >
             <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -171,7 +171,7 @@ export default function ProblemArenaPage({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-[6px] text-xs font-black bg-secondary-background text-foreground border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black bg-secondary-background text-foreground border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
@@ -184,7 +184,7 @@ export default function ProblemArenaPage({
             onClick={handleSubmit}
             disabled={isSubmitting}
             id="submit-button"
-            className="flex items-center gap-1.5 px-5 py-1.5 rounded-[6px] font-black text-xs bg-main text-main-foreground border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-5 py-1.5 rounded-xl font-black text-xs bg-main text-main-foreground border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
@@ -262,7 +262,7 @@ export default function ProblemArenaPage({
           {/* Editor Header */}
           <div className="flex items-center justify-between px-4 py-2.5 bg-secondary-background border-b-4 border-black flex-shrink-0">
             <div className="flex items-center gap-2 text-xs font-mono text-foreground font-bold">
-              <span className="px-2.5 py-0.5 rounded-[4px] bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000]">
+              <span className="px-2.5 py-0.5 rounded-xl bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000]">
                 Python 3
               </span>
               <span className="text-black font-black">|</span>

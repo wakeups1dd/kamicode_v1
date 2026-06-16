@@ -61,6 +61,11 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     const error = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(error.detail || `API Error: ${res.status}`);
   }
+  
+  if (res.status === 204) {
+    return undefined as unknown as T;
+  }
+  
   return res.json();
 }
 
@@ -177,6 +182,25 @@ export async function joinCohort(inviteCode: string): Promise<CohortResponse> {
   return apiFetch<CohortResponse>("/api/cohorts/join", {
     method: "POST",
     body: JSON.stringify({ invite_code: inviteCode }),
+  });
+}
+
+export async function leaveCohort(slug: string): Promise<{ status: string; message: string }> {
+  return apiFetch<{ status: string; message: string }>(`/api/cohorts/${slug}/leave`, {
+    method: "POST",
+  });
+}
+
+export async function updateCohort(slug: string, payload: { name?: string; description?: string }): Promise<CohortResponse> {
+  return apiFetch<CohortResponse>(`/api/cohorts/${slug}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteCohort(slug: string): Promise<void> {
+  return apiFetch<void>(`/api/cohorts/${slug}`, {
+    method: "DELETE",
   });
 }
 

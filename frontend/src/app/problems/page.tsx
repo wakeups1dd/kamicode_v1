@@ -47,14 +47,14 @@ function CustomDropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-left appearance-none bg-secondary-background border-2 border-black text-foreground rounded-[6px] pl-3.5 pr-9 py-2 text-xs font-black outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all"
+        className="w-full text-left appearance-none bg-secondary-background border-2 border-black text-foreground rounded-xl pl-3.5 pr-9 py-2 text-xs font-black outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all"
       >
         {labelPrefix}{selectedOption?.label}
         <ChevronDown className={`w-4 h-4 text-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>
       
       {isOpen && (
-        <div className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-2 min-w-full whitespace-nowrap max-h-[50vh] overflow-y-auto bg-secondary-background/90 backdrop-blur-md border-2 border-black rounded-[6px] shadow-[4px_4px_0px_0px_#000] z-50 flex flex-col animate-in fade-in zoom-in-95 duration-100`}>
+        <div className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-2 min-w-full whitespace-nowrap max-h-[50vh] overflow-y-auto bg-secondary-background/90 backdrop-blur-md border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] z-50 flex flex-col animate-in fade-in zoom-in-95 duration-100`}>
           {options.map((opt) => (
             <button
               key={opt.value}
@@ -154,7 +154,7 @@ export default function ProblemsPage() {
             <span className="hover:underline cursor-pointer">Coder</span>
             <span>/</span>
             <span className="text-foreground font-black hover:underline cursor-pointer">problems</span>
-            <span className="text-[9px] px-2 py-0.5 rounded-[4px] border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
+            <span className="text-[9px] px-2 py-0.5 rounded-xl border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
               main
             </span>
           </div>
@@ -171,7 +171,7 @@ export default function ProblemsPage() {
         {/* GitHub Issues style Filters Section */}
         <div className="flex flex-col md:flex-row gap-4">
           {/* Main Search Query Input */}
-          <div className="flex-1 flex items-center gap-2 bg-secondary-background border-2 border-black rounded-[6px] px-3 py-2 shadow-[2.5px_2.5px_0px_0px_#000] focus-within:translate-x-[1px] focus-within:translate-y-[1px] focus-within:shadow-[1.5px_1.5px_0px_0px_#000] transition-all">
+          <div className="flex-1 flex items-center gap-2 bg-secondary-background border-2 border-black rounded-xl px-3 py-2 shadow-[2.5px_2.5px_0px_0px_#000] focus-within:translate-x-[1px] focus-within:translate-y-[1px] focus-within:shadow-[1.5px_1.5px_0px_0px_#000] transition-all">
             <span className="text-xs font-mono font-black text-main pr-2 border-r-2 border-black select-none">
               is:problem
             </span>
@@ -215,14 +215,14 @@ export default function ProblemsPage() {
         </div>
 
         {/* Problems Main Box - styled like Neobrutalist Directory */}
-        <div className="bg-secondary-background border-4 border-black rounded-[6px] shadow-[4px_4px_0px_0px_#000] overflow-hidden animate-slide-up">
+        <div className="bg-secondary-background border-4 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] overflow-hidden animate-slide-up">
           {/* Header of the directory box */}
           <div className="bg-main border-b-4 border-black px-4.5 py-3.5 flex flex-wrap items-center justify-between gap-4">
             {/* Status tabs */}
             <div className="flex items-center gap-3 text-xs font-bold select-none">
               <button
                 onClick={() => setStatusFilter("all")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] border-2 border-black transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-black transition-all ${
                   statusFilter === "all" ? "bg-secondary-background text-foreground font-black shadow-[1.5px_1.5px_0px_0px_#000]" : "bg-transparent text-main-foreground hover:bg-white/20 font-black"
                 }`}
               >
@@ -232,7 +232,7 @@ export default function ProblemsPage() {
 
               <button
                 onClick={() => setStatusFilter("solved")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] border-2 border-black transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-black transition-all ${
                   statusFilter === "solved" ? "bg-secondary-background text-foreground font-black shadow-[1.5px_1.5px_0px_0px_#000]" : "bg-transparent text-main-foreground hover:bg-white/20 font-black"
                 }`}
               >
@@ -317,7 +317,7 @@ export default function ProblemsPage() {
                         </Link>
 
                         {/* Label Badge */}
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-black bg-background text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_0px_#000]">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-xl text-[10px] font-black bg-background text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_0px_#000]">
                           {p.topic}
                         </span>
                       </div>

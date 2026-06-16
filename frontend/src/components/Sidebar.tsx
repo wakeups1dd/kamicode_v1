@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import SearchModal from "./SearchModal";
 import SettingsModal from "./SettingsModal";
+import ConfirmModal from "./ConfirmModal";
 
 /* ── Icon components (inline SVGs to avoid extra deps) ──────── */
 
@@ -117,6 +118,7 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
   const { user, signOut } = useAuth();
 
   // Don't show sidebar on auth page or problem arena pages (full-screen editor)
@@ -141,7 +143,7 @@ export default function Sidebar() {
       {/* Logo Container */}
       <div className="flex items-center gap-3 px-4 h-[68px] flex-shrink-0 border-b-4 border-black">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-[6px] bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 shadow-[2px_2px_0px_0px_#000] logo-shake transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 shadow-[2px_2px_0px_0px_#000] logo-shake transition-transform">
             K
           </div>
           {!collapsed && (
@@ -162,7 +164,7 @@ export default function Sidebar() {
             return (
               <div
                 key={item.label}
-                className={`flex items-center gap-3 px-3 py-3 rounded-[6px] text-foreground/45 border-2 border-dashed border-transparent cursor-not-allowed select-none ${collapsed ? "justify-center" : ""
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-foreground/45 border-2 border-dashed border-transparent cursor-not-allowed select-none ${collapsed ? "justify-center" : ""
                   }`}
                 title={collapsed ? `${item.label} (Coming Soon)` : undefined}
               >
@@ -170,7 +172,7 @@ export default function Sidebar() {
                 {!collapsed && (
                   <span className="text-sm font-bold whitespace-nowrap flex items-center justify-between w-full">
                     {item.label}
-                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-[4px] border-2 border-black bg-muted text-foreground">soon</span>
+                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-xl border-2 border-black bg-muted text-foreground">soon</span>
                   </span>
                 )}
               </div>
@@ -181,7 +183,7 @@ export default function Sidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-[6px] transition-all duration-100 group relative border-2 ${collapsed ? "justify-center animate-fade" : "animate-fade"
+              className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-100 group relative border-2 ${collapsed ? "justify-center animate-fade" : "animate-fade"
                 } ${active
                   ? "bg-main text-main-foreground border-black shadow-[2px_2px_0px_0px_#000] font-black"
                   : "text-foreground/75 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] font-bold"
@@ -202,7 +204,7 @@ export default function Sidebar() {
         {/* Search */}
         <button
           onClick={() => setIsSearchOpen(true)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
             }`}
           title={collapsed ? "Search" : undefined}
         >
@@ -213,7 +215,7 @@ export default function Sidebar() {
         {/* Settings */}
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
             }`}
           title={collapsed ? "Settings" : undefined}
         >
@@ -224,7 +226,7 @@ export default function Sidebar() {
         {/* Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-foreground/50 hover:text-foreground hover:bg-background/80 border-2 border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-foreground/50 hover:text-foreground hover:bg-background/80 border-2 border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
             }`}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -239,12 +241,8 @@ export default function Sidebar() {
       {/* User Box at bottom with explicit Sign Out */}
       <div className="px-3 py-4 border-t-4 border-black bg-background/50">
         <div
-          onClick={() => {
-            if (confirm("Are you sure you want to sign out?")) {
-              signOut();
-            }
-          }}
-          className={`flex items-center gap-3 p-2 rounded-[6px] border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 transition-all cursor-pointer ${
+          onClick={() => setIsSignOutConfirmOpen(true)}
+          className={`flex items-center gap-3 p-2 rounded-xl border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 transition-all cursor-pointer ${
             collapsed ? "justify-center p-1.5" : "p-2"
           }`}
           title="Sign Out"
@@ -253,10 +251,10 @@ export default function Sidebar() {
             <img
               src={user.user_metadata.avatar_url}
               alt={username}
-              className="w-8 h-8 rounded-[4px] border-2 border-black object-cover"
+              className="w-8 h-8 rounded-xl border-2 border-black object-cover"
             />
           ) : (
-            <div className="w-8 h-8 rounded-[4px] bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
               {avatarInit}
             </div>
           )}
@@ -273,6 +271,18 @@ export default function Sidebar() {
 
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <ConfirmModal
+        isOpen={isSignOutConfirmOpen}
+        title="Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign Out"
+        isDestructive={true}
+        onConfirm={() => {
+          setIsSignOutConfirmOpen(false);
+          signOut();
+        }}
+        onCancel={() => setIsSignOutConfirmOpen(false)}
+      />
     </aside>
   );
 }

@@ -187,7 +187,7 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
         </div>
 
         {/* Opponent Status HUD */}
-        <div className="flex items-center gap-4 bg-background border-2 border-black rounded-[4px] px-3 py-1 shadow-[2px_2px_0px_0px_#000]">
+        <div className="flex items-center gap-4 bg-background border-2 border-black rounded-xl px-3 py-1 shadow-[2px_2px_0px_0px_#000]">
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-[#8bd600] animate-pulse" />
             <span className="text-xs font-bold text-muted-foreground">Opponent:</span>
@@ -246,7 +246,7 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
                 <button
                   onClick={() => handleRunCode(true)}
                   disabled={isRunning}
-                  className="flex items-center gap-1.5 px-5 py-1.5 rounded-[6px] font-black text-xs bg-main text-main-foreground border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-5 py-1.5 rounded-xl font-black text-xs bg-main text-main-foreground border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all disabled:opacity-50"
                 >
                   {isRunning ? "Running..." : "Submit"}
                 </button>

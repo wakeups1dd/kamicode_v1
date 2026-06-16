@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from database import get_db
-from models import Cohort, CohortMember, User
-from schemas import CohortCreate, CohortResponse, CohortDetailResponse, CohortMemberResponse
+from models import Cohort, CohortMember, User, DailyChallenge
+from schemas import CohortCreate, CohortUpdate, CohortResponse, CohortDetailResponse, CohortMemberResponse
 from auth import get_current_user
 
 router = APIRouter(prefix="/api/cohorts", tags=["cohorts"])
@@ -170,3 +170,96 @@ def get_cohort_detail(
         created_at=cohort.created_at,
         members=members_list
     )
+
+
+@router.post("/{slug}/leave", status_code=200)
+def leave_cohort(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Leave a cohort."""
+    cohort = db.query(Cohort).filter(Cohort.slug == slug).first()
+    if not cohort:
+        raise HTTPException(status_code=404, detail="Cohort not found")
+
+    member = db.query(CohortMember).filter(
+        CohortMember.cohort_id == cohort.id,
+        CohortMember.user_id == current_user.id
+    ).first()
+
+    if not member:
+        raise HTTPException(status_code=400, detail="You are not a member of this cohort")
+
+    # Optional: Prevent the sole admin/creator from leaving without deleting the cohort
+    if member.role == "admin":
+        admin_count = db.query(CohortMember).filter(
+            CohortMember.cohort_id == cohort.id,
+            CohortMember.role == "admin"
+        ).count()
+        if admin_count == 1:
+            raise HTTPException(status_code=400, detail="You are the only admin. You cannot leave the cohort.")
+
+    db.delete(member)
+    db.commit()
+    return {"status": "success", "message": "Successfully left the cohort"}
+
+
+@router.put("/{slug}", response_model=CohortResponse)
+def update_cohort(
+    slug: str,
+    payload: CohortUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update cohort details. Only admins can update."""
+    cohort = db.query(Cohort).filter(Cohort.slug == slug).first()
+    if not cohort:
+        raise HTTPException(status_code=404, detail="Cohort not found")
+
+    member = db.query(CohortMember).filter(
+        CohortMember.cohort_id == cohort.id,
+        CohortMember.user_id == current_user.id
+    ).first()
+
+    if not member or member.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can update the cohort")
+
+    if payload.name is not None:
+        cohort.name = payload.name
+    if payload.description is not None:
+        cohort.description = payload.description
+
+    db.commit()
+    db.refresh(cohort)
+    return cohort
+
+
+@router.delete("/{slug}", status_code=204)
+def delete_cohort(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a cohort entirely. Only admins can delete."""
+    cohort = db.query(Cohort).filter(Cohort.slug == slug).first()
+    if not cohort:
+        raise HTTPException(status_code=404, detail="Cohort not found")
+
+    member = db.query(CohortMember).filter(
+        CohortMember.cohort_id == cohort.id,
+        CohortMember.user_id == current_user.id
+    ).first()
+
+    if not member or member.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can delete the cohort")
+
+    # Delete all daily challenges associated with cohort first
+    db.query(DailyChallenge).filter(DailyChallenge.cohort_id == cohort.id).delete(synchronize_session=False)
+
+    # Delete all members first
+    db.query(CohortMember).filter(CohortMember.cohort_id == cohort.id).delete(synchronize_session=False)
+    
+    db.delete(cohort)
+    db.commit()
+    return None

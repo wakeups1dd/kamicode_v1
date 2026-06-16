@@ -163,6 +163,11 @@ class CohortCreate(CohortBase):
     pass
 
 
+class CohortUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
 class CohortResponse(CohortBase):
     id: int
     slug: str

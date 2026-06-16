@@ -82,7 +82,7 @@ export default function AuthPage() {
 
       {/* Brand Section */}
       <div className="flex flex-col max-w-md text-left z-10 p-2">
-        <div className="inline-flex items-center gap-3 bg-white dark:bg-zinc-900 border-2 border-black px-4 py-2 rounded-lg shadow-[4px_4px_0px_0px_#000000] w-fit mb-6 rotate-[-2deg]">
+        <div className="inline-flex items-center gap-3 bg-white dark:bg-zinc-900 border-2 border-black px-4 py-2 rounded-2xl shadow-[4px_4px_0px_0px_#000000] w-fit mb-6 rotate-[-2deg]">
           <Code className="w-8 h-8 text-[#a855f7] dark:text-[#c084fc]" />
           <span className="font-mono font-black text-2xl tracking-tighter text-black dark:text-white">
             KamiCode
@@ -126,7 +126,7 @@ export default function AuthPage() {
 
           {/* Form Messages */}
           {errorMsg && (
-            <div className="bg-red-100 dark:bg-red-950 border-2 border-red-500 dark:border-red-700 text-red-700 dark:text-red-300 p-3 rounded-lg font-mono text-xs font-bold mb-4 animate-shake">
+            <div className="bg-red-100 dark:bg-red-950 border-2 border-red-500 dark:border-red-700 text-red-700 dark:text-red-300 p-3 rounded-2xl font-mono text-xs font-bold mb-4 animate-shake">
               ⚠️ {errorMsg}
             </div>
           )}
@@ -137,7 +137,7 @@ export default function AuthPage() {
               type="button"
               disabled={actionLoading}
               onClick={handleGoogleSignIn}
-              className="w-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-black dark:text-white font-black py-3 px-4 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+              className="w-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-black dark:text-white font-black py-3 px-4 border-2 border-black rounded-2xl shadow-[4px_4px_0px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
             >
               <GoogleIcon className="w-5 h-5" />
               <span>Continue with Google</span>
@@ -148,7 +148,7 @@ export default function AuthPage() {
               type="button"
               disabled={actionLoading}
               onClick={handleGithubSignIn}
-              className="w-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-black dark:text-white font-black py-3 px-4 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+              className="w-full bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-black dark:text-white font-black py-3 px-4 border-2 border-black rounded-2xl shadow-[4px_4px_0px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
             >
               <GithubIcon className="w-5 h-5 text-black dark:text-white" />
               <span>Continue with GitHub</span>

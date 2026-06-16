@@ -21,7 +21,7 @@ function StatusIndicator({ status }: { status: string }) {
   const config = statusConfig[status] || { label: status, bg: "bg-muted", text: "text-foreground", icon: "?" };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-[4px] border-2 border-black font-black text-[10px] uppercase shadow-[1.5px_1.5px_0px_0px_#000] ${config.bg} ${config.text}`}>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border-2 border-black font-black text-[10px] uppercase shadow-[1.5px_1.5px_0px_0px_#000] ${config.bg} ${config.text}`}>
       <span>{config.icon}</span>
       {config.label}
     </span>
@@ -31,14 +31,14 @@ function StatusIndicator({ status }: { status: string }) {
 function TestCaseRow({ result, index }: { result: TestResultItem; index: number }) {
   return (
     <div
-      className={`flex items-start gap-3.5 p-4 rounded-[6px] border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000] transition-colors ${
+      className={`flex items-start gap-3.5 p-4 rounded-xl border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000] transition-colors ${
         result.passed
           ? "bg-[#8bd600]/10"
           : "bg-[#f85149]/10"
       }`}
     >
       <span
-        className={`flex-shrink-0 w-6 h-6 rounded-[4px] border-2 border-black flex items-center justify-center text-xs font-black shadow-[1.5px_1.5px_0px_0px_#000] ${
+        className={`flex-shrink-0 w-6 h-6 rounded-xl border-2 border-black flex items-center justify-center text-xs font-black shadow-[1.5px_1.5px_0px_0px_#000] ${
           result.passed
             ? "bg-[#8bd600] text-black"
             : "bg-[#f85149] text-white"
@@ -51,14 +51,14 @@ function TestCaseRow({ result, index }: { result: TestResultItem; index: number 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Expected</span>
-            <pre className="text-xs font-mono text-foreground bg-background p-2 rounded-[4px] border border-black truncate font-bold">
+            <pre className="text-xs font-mono text-foreground bg-background p-2 rounded-xl border border-black truncate font-bold">
               {result.expected}
             </pre>
           </div>
           <div className="space-y-1">
             <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Actual</span>
             <pre
-              className={`text-xs font-mono p-2 rounded-[4px] border border-black truncate font-bold ${
+              className={`text-xs font-mono p-2 rounded-xl border border-black truncate font-bold ${
                 result.passed ? "text-[#8bd600] bg-background" : "text-[#f85149] bg-background"
               }`}
             >
@@ -67,7 +67,7 @@ function TestCaseRow({ result, index }: { result: TestResultItem; index: number 
           </div>
         </div>
         {result.error && (
-          <pre className="text-xs font-mono text-[#f85149] bg-black p-2.5 rounded-[4px] border border-black mt-2 whitespace-pre-wrap font-bold">
+          <pre className="text-xs font-mono text-[#f85149] bg-black p-2.5 rounded-xl border border-black mt-2 whitespace-pre-wrap font-bold">
             {result.error}
           </pre>
         )}
@@ -78,7 +78,7 @@ function TestCaseRow({ result, index }: { result: TestResultItem; index: number 
 
 export default function TerminalConsole({ submission, isLoading }: TerminalConsoleProps) {
   return (
-    <div className="h-full flex flex-col bg-background rounded-[6px] border-2 border-black overflow-hidden shadow-[3px_3px_0px_0px_#000]">
+    <div className="h-full flex flex-col bg-background rounded-xl border-2 border-black overflow-hidden shadow-[3px_3px_0px_0px_#000]">
       {/* Terminal Header */}
       <div className="flex items-center justify-between px-4.5 py-3 bg-secondary-background border-b-2 border-black flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -145,7 +145,7 @@ export default function TerminalConsole({ submission, isLoading }: TerminalConso
 
             {/* Stderr */}
             {submission.stderr && (
-              <pre className="text-xs font-mono text-[#f85149] bg-black p-3.5 rounded-[6px] border-2 border-black whitespace-pre-wrap font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <pre className="text-xs font-mono text-[#f85149] bg-black p-3.5 rounded-xl border-2 border-black whitespace-pre-wrap font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                 {submission.stderr}
               </pre>
             )}

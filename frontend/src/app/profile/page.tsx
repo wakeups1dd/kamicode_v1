@@ -87,7 +87,7 @@ export default function ProfilePage() {
 
     const c = config[status] || { label: status.toUpperCase(), bg: "bg-zinc-500 text-white" };
     return (
-      <span className={`px-2 py-0.5 rounded-[4px] border border-black font-mono font-black text-[9px] uppercase shadow-[1px_1px_0px_#000] ${c.bg}`}>
+      <span className={`px-2 py-0.5 rounded-xl border border-black font-mono font-black text-[9px] uppercase shadow-[1px_1px_0px_#000] ${c.bg}`}>
         {c.label}
       </span>
     );
@@ -106,7 +106,7 @@ export default function ProfilePage() {
             <span>User</span>
             <span>/</span>
             <span className="text-foreground font-black hover:underline cursor-pointer">profile</span>
-            <span className="text-[9px] px-2 py-0.5 rounded-[4px] border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
+            <span className="text-[9px] px-2 py-0.5 rounded-xl border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
               developer
             </span>
           </div>
@@ -123,7 +123,7 @@ export default function ProfilePage() {
       <div className="max-w-[1000px] mx-auto px-6 py-8 space-y-8">
         
         {error && (
-          <div className="p-4 bg-red-500/10 border-2 border-black rounded-lg text-red-500 text-xs font-bold text-center">
+          <div className="p-4 bg-red-500/10 border-2 border-black rounded-2xl text-red-500 text-xs font-bold text-center">
             ⚠️ {error}
           </div>
         )}
@@ -169,7 +169,7 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <h3 className="font-mono font-black text-xs uppercase tracking-wider text-zinc-500">Solve Streaks</h3>
               
-              <div className="flex items-center justify-between border-2 border-black p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 shadow-[2px_2px_0px_#000]">
+              <div className="flex items-center justify-between border-2 border-black p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 shadow-[2px_2px_0px_#000]">
                 <div className="flex items-center gap-3">
                   <Zap className="w-8 h-8 text-[#ffbf00] fill-current" />
                   <div>
@@ -181,7 +181,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-2 border-black p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 shadow-[2px_2px_0px_#000]">
+              <div className="flex items-center justify-between border-2 border-black p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 shadow-[2px_2px_0px_#000]">
                 <div className="flex items-center gap-3">
                   <Award className="w-8 h-8 text-main" />
                   <div>
