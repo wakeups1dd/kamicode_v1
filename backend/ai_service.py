@@ -80,6 +80,21 @@ async def analyze_code(
     Send a code solution to OpenAI for analysis.
     Returns a parsed dict with complexity, approach, scores, and feedback.
     """
+    if not OPENAI_AVAILABLE or not settings.openai_api_key:
+        return {
+            "time_complexity": "O(N)",
+            "space_complexity": "O(N)",
+            "approach": "Optimal (Mocked)",
+            "approach_explanation": "You don't have an OPENAI_API_KEY set in backend/.env, so here is a mock analysis to demonstrate the UI! The approach leverages optimal state tracking.",
+            "efficiency_score": 90,
+            "code_quality_score": 85,
+            "overall_score": 88,
+            "strengths": ["Clear logic structure", "Optimal Big O time complexity"],
+            "improvements": ["Add your OPENAI_API_KEY to backend/.env to see real AI feedback!", "Add type hints to function signatures"],
+            "optimized_solution_hint": "Your solution is optimal! (This is a mocked response)",
+            "raw_response": "{}"
+        }
+
     client = _get_client()
 
     user_prompt = f"""## Problem: {problem_title}
@@ -133,4 +148,5 @@ Analyze this solution."""
 
 def is_available() -> bool:
     """Check if OpenAI integration is configured and available."""
-    return OPENAI_AVAILABLE and bool(settings.openai_api_key)
+    # Always return true so we can provide a mock analysis if no key is present
+    return True

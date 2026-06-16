@@ -1,7 +1,65 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getGlobalLeaderboard, getCohortLeaderboard, getMyCohorts } from "@/lib/api";
+
+function CustomDropdown({
+  value,
+  onChange,
+  options,
+  labelPrefix = "",
+  align = "left"
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  labelPrefix?: string;
+  align?: "left" | "right";
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((o) => o.value === value) || options[0];
+
+  return (
+    <div className="relative w-full" ref={ref}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full text-left appearance-none bg-secondary-background border-2 border-black text-foreground rounded-xl pl-3.5 pr-9 py-2 text-xs font-black outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all"
+      >
+        {labelPrefix}{selectedOption?.label}
+        <ChevronDown className={`w-4 h-4 text-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+      
+      {isOpen && (
+        <div className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-2 min-w-full whitespace-nowrap max-h-[50vh] overflow-y-auto bg-secondary-background/90 backdrop-blur-md border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000] z-50 flex flex-col animate-in fade-in zoom-in-95 duration-100`}>
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`text-left px-4 py-2.5 text-xs font-black border-b-2 border-black last:border-b-0 hover:bg-main hover:text-main-foreground transition-colors ${value === opt.value ? 'bg-main/20' : ''}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 import { useAuth } from "@/context/AuthContext";
 import type { LeaderboardEntry, CohortResponse } from "@/lib/types";
 import { Trophy, Users, Award, Zap, Code, ShieldAlert, Sparkles, ChevronDown } from "lucide-react";
@@ -145,20 +203,12 @@ export default function LeaderboardPage() {
           {!isGlobal && (
             <div className="relative w-full sm:w-64">
               {cohorts.length > 0 ? (
-                <>
-                  <select
-                    value={selectedCohort?.id || ""}
-                    onChange={(e) => handleCohortChange(Number(e.target.value))}
-                    className="appearance-none w-full bg-secondary-background border-2 border-black text-foreground rounded-xl pl-4 pr-10 py-2.5 text-xs font-black cursor-pointer outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] transition-all"
-                  >
-                    {cohorts.map((cohort) => (
-                      <option key={cohort.id} value={cohort.id}>
-                        League: {cohort.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-foreground absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </>
+                <CustomDropdown
+                  value={selectedCohort?.id.toString() || ""}
+                  onChange={(val) => handleCohortChange(Number(val))}
+                  options={cohorts.map((c) => ({ value: c.id.toString(), label: c.name }))}
+                  labelPrefix="League: "
+                />
               ) : (
                 <div className="text-xs font-mono font-bold text-zinc-500 bg-secondary-background border-2 border-black p-2.5 rounded-2xl">
                   ⚠️ No cohorts joined yet.

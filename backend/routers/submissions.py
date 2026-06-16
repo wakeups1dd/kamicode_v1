@@ -244,12 +244,21 @@ async def _execute_submission(
         # Update user streak if accepted
         if submission.status == SubmissionStatus.ACCEPTED and submission.user_id:
             try:
-                _update_user_streak(db, submission.user_id)
-                # Auto-evaluate badges after a successful submission
-                from routers.badges import evaluate_badges
-                new_badges = evaluate_badges(submission.user_id, db)
-                if new_badges:
-                    print(f"[*] User {submission.user_id} unlocked {len(new_badges)} new badges!")
+                # Check if this is the first time the user solved this problem
+                existing_ac = db.query(Submission).filter(
+                    Submission.problem_id == problem_id,
+                    Submission.user_id == submission.user_id,
+                    Submission.status == SubmissionStatus.ACCEPTED,
+                    Submission.id != submission_id
+                ).first()
+
+                if not existing_ac:
+                    _update_user_streak(db, submission.user_id)
+                    # Auto-evaluate badges after a successful submission
+                    from routers.badges import evaluate_badges
+                    new_badges = evaluate_badges(submission.user_id, db)
+                    if new_badges:
+                        print(f"[*] User {submission.user_id} unlocked {len(new_badges)} new badges!")
             except Exception as se:
                 print(f"[ERROR] Failed to update user streak/badges: {se}")
 

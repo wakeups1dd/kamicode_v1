@@ -31,7 +31,7 @@ export default function ProblemArenaPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"description" | "results">("description");
+  const [activeTab, setActiveTab] = useState<"description" | "results" | "ai_eval">("description");
 
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -240,17 +240,40 @@ export default function ProblemArenaPage({
                 />
               )}
             </button>
+            <button
+              onClick={() => setActiveTab("ai_eval")}
+              className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all rounded-t-[6px] border-2 border-black flex items-center ${
+                activeTab === "ai_eval"
+                  ? "bg-background text-foreground border-b-transparent -mb-[4px] z-10"
+                  : "bg-background/40 text-foreground/60 border-b-black hover:bg-background/80"
+              }`}
+            >
+              <span>AI Eval</span>
+              {(isAnalyzing || aiAnalysis) && (
+                <span className={`ml-2 w-2 h-2 rounded-full border border-black inline-block ${isAnalyzing ? "bg-[#ffbf00] animate-pulse" : "bg-[#d67aff]"}`} />
+              )}
+            </button>
           </div>
 
           {/* Tab Content */}
           <div className="flex-1 overflow-hidden">
             {activeTab === "description" ? (
               <ProblemPanel problem={problem} />
-            ) : (
+            ) : activeTab === "results" ? (
               <div className="h-full overflow-y-auto p-4 bg-background space-y-4 scrollbar-thin">
                 <TerminalConsole submission={submission} isLoading={isSubmitting} />
-                {(isAnalyzing || aiAnalysis) && (
+              </div>
+            ) : (
+              <div className="h-full overflow-y-auto p-4 bg-background space-y-4 scrollbar-thin">
+                {(isAnalyzing || aiAnalysis) ? (
                   <AIAnalysisCard analysis={aiAnalysis} loading={isAnalyzing} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground font-mono font-bold">
+                    <svg className="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <p>Submit your code to see AI evaluation results.</p>
+                  </div>
                 )}
               </div>
             )}
