@@ -111,6 +111,52 @@ const navItems: NavItem[] = [
   { label: "Profile", href: "/profile", icon: IconUser },
 ];
 
+/* ── Mobile Bottom Navigation ──────────────────────────────── */
+
+function MobileBottomNav({
+  isActive,
+  onSettingsOpen,
+}: {
+  isActive: (href: string) => boolean;
+  onSettingsOpen: () => void;
+}) {
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-secondary-background border-t-4 border-black safe-area-bottom">
+      <div className="flex items-center justify-around px-1 py-1.5">
+        {navItems.map((item) => {
+          const active = isActive(item.href);
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-md transition-all min-w-[48px] ${
+                active
+                  ? "text-main-foreground bg-main border-2 border-black shadow-[1.5px_1.5px_0px_0px_#000]"
+                  : "text-foreground/60 border-2 border-transparent"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className={`text-[9px] leading-none ${active ? "font-black" : "font-bold"}`}>
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+        {/* Settings icon in bottom nav */}
+        <button
+          onClick={onSettingsOpen}
+          className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-md text-foreground/60 border-2 border-transparent transition-all min-w-[48px]"
+        >
+          <IconSettings className="w-5 h-5" />
+          <span className="text-[9px] leading-none font-bold">More</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 /* ── Sidebar Component ─────────────────────────────────────── */
 
 export default function Sidebar() {
@@ -136,139 +182,149 @@ export default function Sidebar() {
   const avatarInit = displayName.charAt(0).toUpperCase();
 
   return (
-    <aside
-      className={`sidebar-transition flex-shrink-0 flex flex-col bg-secondary-background border-r-4 border-black h-full select-none ${collapsed ? "w-[76px]" : "w-[240px]"
-        }`}
-    >
-      {/* Logo Container */}
-      <div className="flex items-center gap-3 px-4 h-[68px] flex-shrink-0 border-b-4 border-black">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-md bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 shadow-[2px_2px_0px_0px_#000] logo-shake transition-transform">
-            K
-          </div>
-          {!collapsed && (
-            <span className="text-xl font-black tracking-tight text-foreground whitespace-nowrap">
-              Kami<span className="text-main">Code</span>
-            </span>
-          )}
-        </Link>
-      </div>
+    <>
+      {/* ── Desktop Sidebar (hidden on mobile) ──────────────── */}
+      <aside
+        className={`sidebar-transition flex-shrink-0 hidden lg:flex flex-col bg-secondary-background border-r-4 border-black h-full select-none ${collapsed ? "w-[76px]" : "w-[240px]"
+          }`}
+      >
+        {/* Logo Container */}
+        <div className="flex items-center gap-3 px-4 h-[68px] flex-shrink-0 border-b-4 border-black">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-md bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 shadow-[2px_2px_0px_0px_#000] logo-shake transition-transform">
+              K
+            </div>
+            {!collapsed && (
+              <span className="text-xl font-black tracking-tight text-foreground whitespace-nowrap">
+                Kami<span className="text-main">Code</span>
+              </span>
+            )}
+          </Link>
+        </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-5 space-y-2.5">
-        {navItems.map((item) => {
-          const active = isActive(item.href);
-          const Icon = item.icon;
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-5 space-y-2.5">
+          {navItems.map((item) => {
+            const active = isActive(item.href);
+            const Icon = item.icon;
 
-          if (item.disabled) {
+            if (item.disabled) {
+              return (
+                <div
+                  key={item.label}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-md text-foreground/45 border-2 border-dashed border-transparent cursor-not-allowed select-none ${collapsed ? "justify-center" : ""
+                    }`}
+                  title={collapsed ? `${item.label} (Coming Soon)` : undefined}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  {!collapsed && (
+                    <span className="text-sm font-bold whitespace-nowrap flex items-center justify-between w-full">
+                      {item.label}
+                      <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border-2 border-black bg-muted text-foreground">soon</span>
+                    </span>
+                  )}
+                </div>
+              );
+            }
+
             return (
-              <div
+              <Link
                 key={item.label}
-                className={`flex items-center gap-3 px-3 py-3 rounded-md text-foreground/45 border-2 border-dashed border-transparent cursor-not-allowed select-none ${collapsed ? "justify-center" : ""
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all duration-100 group relative border-2 ${collapsed ? "justify-center animate-fade" : "animate-fade"
+                  } ${active
+                    ? "bg-main text-main-foreground border-black shadow-[2px_2px_0px_0px_#000] font-black"
+                    : "text-foreground/75 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] font-bold"
                   }`}
-                title={collapsed ? `${item.label} (Coming Soon)` : undefined}
+                title={collapsed ? item.label : undefined}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 {!collapsed && (
-                  <span className="text-sm font-bold whitespace-nowrap flex items-center justify-between w-full">
-                    {item.label}
-                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border-2 border-black bg-muted text-foreground">soon</span>
-                  </span>
+                  <span className="text-sm whitespace-nowrap">{item.label}</span>
                 )}
-              </div>
+              </Link>
             );
-          }
+          })}
+        </nav>
 
-          return (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all duration-100 group relative border-2 ${collapsed ? "justify-center animate-fade" : "animate-fade"
-                } ${active
-                  ? "bg-main text-main-foreground border-black shadow-[2px_2px_0px_0px_#000] font-black"
-                  : "text-foreground/75 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] font-bold"
-                }`}
-              title={collapsed ? item.label : undefined}
-            >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && (
-                <span className="text-sm whitespace-nowrap">{item.label}</span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+        {/* Bottom Section */}
+        <div className="px-3 py-4 space-y-2 border-t-4 border-black bg-background/25">
+          {/* Search */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+              }`}
+            title={collapsed ? "Search" : undefined}
+          >
+            <IconSearch className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && <span className="text-sm">Search</span>}
+          </button>
 
-      {/* Bottom Section */}
-      <div className="px-3 py-4 space-y-2 border-t-4 border-black bg-background/25">
-        {/* Search */}
-        <button
-          onClick={() => setIsSearchOpen(true)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
-            }`}
-          title={collapsed ? "Search" : undefined}
-        >
-          <IconSearch className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span className="text-sm">Search</span>}
-        </button>
+          {/* Settings */}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+              }`}
+            title={collapsed ? "Settings" : undefined}
+          >
+            <IconSettings className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && <span className="text-sm">Settings</span>}
+          </button>
 
-        {/* Settings */}
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-foreground/75 border-2 border-transparent hover:border-black hover:bg-background/80 hover:text-foreground hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
-            }`}
-          title={collapsed ? "Settings" : undefined}
-        >
-          <IconSettings className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span className="text-sm">Settings</span>}
-        </button>
-
-        {/* Collapse Toggle */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-foreground/50 hover:text-foreground hover:bg-background/80 border-2 border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
-            }`}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <IconChevron
-            className="w-4 h-4 flex-shrink-0"
-            direction={collapsed ? "right" : "left"}
-          />
-          {!collapsed && <span className="text-sm">Collapse</span>}
-        </button>
-      </div>
-
-      {/* User Box at bottom with explicit Sign Out */}
-      <div className="px-3 py-4 border-t-4 border-black bg-background/50">
-        <div
-          onClick={() => setIsSignOutConfirmOpen(true)}
-          className={`flex items-center gap-3 p-2 rounded-md border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 transition-all cursor-pointer ${
-            collapsed ? "justify-center p-1.5" : "p-2"
-          }`}
-          title="Sign Out"
-        >
-          {user?.user_metadata?.avatar_url ? (
-            <img
-              src={user.user_metadata.avatar_url}
-              alt={username}
-              className="w-8 h-8 rounded-md border-2 border-black object-cover"
+          {/* Collapse Toggle */}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-foreground/50 hover:text-foreground hover:bg-background/80 border-2 border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all w-full font-bold ${collapsed ? "justify-center" : ""
+              }`}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <IconChevron
+              className="w-4 h-4 flex-shrink-0"
+              direction={collapsed ? "right" : "left"}
             />
-          ) : (
-            <div className="w-8 h-8 rounded-md bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
-              {avatarInit}
-            </div>
-          )}
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black truncate">{displayName}</div>
-              <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
-                Sign Out
-              </div>
-            </div>
-          )}
+            {!collapsed && <span className="text-sm">Collapse</span>}
+          </button>
         </div>
-      </div>
 
+        {/* User Box at bottom with explicit Sign Out */}
+        <div className="px-3 py-4 border-t-4 border-black bg-background/50">
+          <div
+            onClick={() => setIsSignOutConfirmOpen(true)}
+            className={`flex items-center gap-3 p-2 rounded-md border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 transition-all cursor-pointer ${
+              collapsed ? "justify-center p-1.5" : "p-2"
+            }`}
+            title="Sign Out"
+          >
+            {user?.user_metadata?.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt={username}
+                className="w-8 h-8 rounded-md border-2 border-black object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-md bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
+                {avatarInit}
+              </div>
+            )}
+            {!collapsed && (
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-black truncate">{displayName}</div>
+                <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
+                  Sign Out
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Mobile Bottom Nav (hidden on desktop) ──────────── */}
+      <MobileBottomNav
+        isActive={isActive}
+        onSettingsOpen={() => setIsSettingsOpen(true)}
+      />
+
+      {/* ── Shared Modals ──────────────────────────────────── */}
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <ConfirmModal
@@ -283,6 +339,6 @@ export default function Sidebar() {
         }}
         onCancel={() => setIsSignOutConfirmOpen(false)}
       />
-    </aside>
+    </>
   );
 }

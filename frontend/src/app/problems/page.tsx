@@ -148,7 +148,7 @@ export default function ProblemsPage() {
   return (
     <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
       {/* Breadcrumbs header */}
-      <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
+      <div className="bg-secondary-background border-b-4 border-black py-5 sm:py-7 px-4 sm:px-6 lg:px-8">
         <div className="max-w-[1100px] mx-auto space-y-2">
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
             <span className="hover:underline cursor-pointer">Coder</span>
@@ -167,7 +167,7 @@ export default function ProblemsPage() {
         </div>
       </div>
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5 sm:space-y-6">
         {/* GitHub Issues style Filters Section */}
         <div className="flex flex-col md:flex-row gap-4">
           {/* Main Search Query Input */}
@@ -293,7 +293,7 @@ export default function ProblemsPage() {
                   return (
                     <div
                       key={p.id}
-                      className="problem-row p-4.5 flex items-start gap-4 bg-secondary-background hover:bg-background/80 transition-colors animate-fade"
+                      className="problem-row p-3 sm:p-4.5 flex items-start gap-3 sm:gap-4 bg-secondary-background hover:bg-background/80 transition-colors animate-fade"
                     >
                       {/* Status Circle Check */}
                       <span className="mt-0.5 flex-shrink-0">
@@ -336,7 +336,7 @@ export default function ProblemsPage() {
                     </div>
 
                     {/* Right Columns: Difficulty pill & Stats */}
-                    <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                       <span
                         className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border-2 border-black shadow-[1.5px_1.5px_0px_0px_#000] ${
                           p.difficulty === "easy"

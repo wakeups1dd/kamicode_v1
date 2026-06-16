@@ -437,3 +437,21 @@
 .problem-row:hover {
   background-color: var(--muted);
 }
+
+/* ── Responsive / Mobile ─────────────────────────── */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Safe area padding for iOS devices with notch/home bar */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide scrollbar on small screens for cleaner mobile feel */
+@media (max-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}

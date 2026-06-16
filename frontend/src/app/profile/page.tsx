@@ -100,7 +100,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
       {/* Header section */}
-      <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
+      <div className="bg-secondary-background border-b-4 border-black py-5 sm:py-7 px-4 sm:px-6 lg:px-8">
         <div className="max-w-[1000px] mx-auto space-y-2">
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
             <span>User</span>
@@ -120,7 +120,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-[1000px] mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-[1000px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
         
         {error && (
           <div className="p-4 bg-red-500/10 border-2 border-black rounded-2xl text-red-500 text-xs font-bold text-center">
@@ -270,12 +270,12 @@ export default function ProfilePage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b-2 border-black bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 font-mono font-black text-[10px] uppercase select-none">
-                    <th className="py-3 px-5">Problem Challenge</th>
-                    <th className="py-3 px-5 text-center w-28">Verdict</th>
-                    <th className="py-3 px-5 text-center w-24">Runtime</th>
-                    <th className="py-3 px-5 text-center w-24">Language</th>
-                    <th className="py-3 px-5 text-center w-36">Timestamp</th>
-                    <th className="py-3 px-5 text-center w-16">Arena</th>
+                    <th className="py-3 px-3 sm:px-5">Problem Challenge</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-28">Verdict</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-24 hidden sm:table-cell">Runtime</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-24 hidden md:table-cell">Language</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-36 hidden lg:table-cell">Timestamp</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-16 hidden sm:table-cell">Arena</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-black">
@@ -303,23 +303,19 @@ export default function ProfilePage() {
                           {getVerdictBadge(sub.status)}
                         </td>
 
-                        {/* Runtime */}
-                        <td className="py-3.5 px-5 text-center font-mono">
+                        <td className="py-3.5 px-3 sm:px-5 text-center font-mono hidden sm:table-cell">
                           {sub.runtime_ms != null ? `${sub.runtime_ms}ms` : "—"}
                         </td>
 
-                        {/* Language */}
-                        <td className="py-3.5 px-5 text-center font-mono uppercase text-[10px] text-zinc-600 dark:text-zinc-400">
+                        <td className="py-3.5 px-3 sm:px-5 text-center font-mono uppercase text-[10px] text-zinc-600 dark:text-zinc-400 hidden md:table-cell">
                           {sub.language}
                         </td>
 
-                        {/* Timestamp */}
-                        <td className="py-3.5 px-5 text-center font-mono text-zinc-500 font-medium">
+                        <td className="py-3.5 px-3 sm:px-5 text-center font-mono text-zinc-500 font-medium hidden lg:table-cell">
                           {sub.created_at ? new Date(sub.created_at).toLocaleString() : "—"}
                         </td>
 
-                        {/* Link to code */}
-                        <td className="py-3.5 px-5 text-center">
+                        <td className="py-3.5 px-3 sm:px-5 text-center hidden sm:table-cell">
                           {probSlug ? (
                             <Link href={`/problems/${probSlug}`} className="inline-flex items-center text-main hover:text-main/80" title="Go to arena">
                               <ExternalLink className="w-4 h-4 stroke-[2.5]" />

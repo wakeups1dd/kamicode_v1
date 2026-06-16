@@ -148,7 +148,7 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
       {/* Header section */}
-      <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
+      <div className="bg-secondary-background border-b-4 border-black py-5 sm:py-7 px-4 sm:px-6 lg:px-8">
         <div className="max-w-[1000px] mx-auto space-y-2">
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
             <span>League</span>
@@ -168,7 +168,7 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      <div className="max-w-[1000px] mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-[1000px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5 sm:space-y-6">
         
         {/* Navigation / Selectors */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -264,11 +264,11 @@ export default function LeaderboardPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b-2 border-black bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 font-mono font-black text-[10px] uppercase select-none">
-                    <th className="py-3 px-5 text-center w-16">Rank</th>
-                    <th className="py-3 px-5">Developer</th>
-                    <th className="py-3 px-5 text-center w-24">Solved</th>
-                    <th className="py-3 px-5 text-center w-24">Current Streak</th>
-                    <th className="py-3 px-5 text-center w-24">Max Streak</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-16">Rank</th>
+                    <th className="py-3 px-3 sm:px-5">Developer</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-24">Solved</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-24">Current Streak</th>
+                    <th className="py-3 px-3 sm:px-5 text-center w-24 hidden sm:table-cell">Max Streak</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-black">
@@ -335,7 +335,7 @@ export default function LeaderboardPage() {
                         </td>
 
                         {/* Max Streak */}
-                        <td className="py-4 px-5 text-center font-mono font-bold text-xs text-zinc-600 dark:text-zinc-400">
+                        <td className="py-4 px-3 sm:px-5 text-center font-mono font-bold text-xs text-zinc-600 dark:text-zinc-400 hidden sm:table-cell">
                           {row.longest_streak}d
                         </td>
                       </tr>

@@ -82,7 +82,7 @@ export default function CohortsPage() {
   return (
     <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
       {/* Header section */}
-      <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
+      <div className="bg-secondary-background border-b-4 border-black py-5 sm:py-7 px-4 sm:px-6 lg:px-8">
         <div className="max-w-[1100px] mx-auto space-y-2">
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
             <span>League</span>
@@ -102,8 +102,8 @@ export default function CohortsPage() {
         </div>
       </div>
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
           
           {/* Left columns:joined cohorts list */}
           <div className="lg:col-span-2 space-y-5">

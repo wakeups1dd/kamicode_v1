@@ -144,7 +144,7 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
   if (detailLoading) {
     return (
       <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
-        <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
+        <div className="bg-secondary-background border-b-4 border-black py-5 sm:py-7 px-4 sm:px-6 lg:px-8">
           <div className="max-w-[1100px] mx-auto space-y-2">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
               <Users className="w-6 h-6 text-purple-500" />
@@ -152,7 +152,7 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
             </h1>
           </div>
         </div>
-        <div className="max-w-[1100px] mx-auto px-6 py-8">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex flex-col items-center justify-center py-20 bg-secondary-background border-4 border-black rounded-2xl shadow-[4px_4px_0px_0px_#000] gap-3">
             <div className="w-8 h-8 rounded-full border-4 border-transparent border-t-main animate-spin" />
             <span className="text-xs font-mono font-bold text-muted-foreground">Loading details...</span>
@@ -165,7 +165,7 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
   if (error || !activeCohort) {
     return (
       <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
-        <div className="max-w-[1100px] mx-auto px-6 py-8">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
           <div className="p-6 bg-red-500/10 border-2 border-black text-red-500 text-sm font-bold rounded-2xl text-center">
             ⚠️ {error || "Cohort not found."}
           </div>
@@ -180,7 +180,7 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
   return (
     <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
       {/* Header section */}
-      <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
+      <div className="bg-secondary-background border-b-4 border-black py-5 sm:py-7 px-4 sm:px-6 lg:px-8">
         <div className="max-w-[1100px] mx-auto space-y-2">
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
             <span>League</span>
@@ -201,9 +201,9 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
         </div>
       </div>
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <button
               onClick={() => router.push('/cohorts')}
               className="flex items-center gap-1.5 px-3 py-1.5 border-2 border-black rounded-xl bg-secondary-background text-xs font-black hover:bg-main hover:text-main-foreground shadow-[1.5px_1.5px_0px_#000] active:translate-x-[1.5px] active:translate-y-[1.5px] active:shadow-none transition-all cursor-pointer"
@@ -325,8 +325,8 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
                   const isMe = user && entry.user_id === user.id;
 
                   return (
-                    <div key={entry.user_id} className={`p-4 flex items-center justify-between gap-4 ${isMe ? "bg-purple-100/20 dark:bg-purple-900/5" : ""}`}>
-                      <div className="flex items-center gap-4">
+                    <div key={entry.user_id} className={`p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 ${isMe ? "bg-purple-100/20 dark:bg-purple-900/5" : ""}`}>
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                         <span className="font-black text-lg w-6 text-center text-zinc-400">
                           #{entry.rank}
                         </span>

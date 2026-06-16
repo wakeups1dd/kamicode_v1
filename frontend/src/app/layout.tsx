@@ -30,10 +30,10 @@ export default function RootLayout({
       lang="en"
       className={`dark ${dmSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full flex overflow-hidden">
+      <body className="h-full flex overflow-hidden overflow-x-hidden">
         <AuthProvider>
           <Sidebar />
-          <main className="flex-1 overflow-y-auto">{children}</main>
+          <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">{children}</main>
           <BadgeToaster />
         </AuthProvider>
       </body>

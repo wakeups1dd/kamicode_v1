@@ -94,7 +94,7 @@ function ContributionCalendar({ submissions }: { submissions: SubmissionResponse
 
   return (
     <div className="git-card p-5 animate-slide-up select-none overflow-hidden">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-1">
         <h3 className="text-sm font-black text-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
           <span>Contributions & Solves</span>
@@ -401,7 +401,7 @@ export default function HomePage() {
   return (
     <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
       {/* Header section */}
-      <div className="bg-secondary-background border-b-4 border-black py-7 px-6 sm:px-8">
+      <div className="bg-secondary-background border-b-4 border-black py-5 sm:py-7 px-4 sm:px-6 lg:px-8">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
@@ -422,7 +422,7 @@ export default function HomePage() {
           </div>
 
           {/* Action Counters */}
-          <div className="flex items-center gap-3 flex-wrap select-none">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap select-none">
             <div className="flex items-center rounded-xl border-2 border-black bg-secondary-background overflow-hidden shadow-[2.5px_2.5px_0px_0px_#000]">
               <div className="flex items-center gap-1.5 px-3 py-1 text-xs bg-main text-main-foreground font-black border-r-2 border-black">
                 <Flame className="w-3.5 h-3.5" />
@@ -456,7 +456,7 @@ export default function HomePage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="max-w-[1200px] mx-auto mt-6 flex gap-2.5">
+        <div className="max-w-[1200px] mx-auto mt-4 sm:mt-6 flex gap-2.5 overflow-x-auto px-4 sm:px-0">
           <button className="flex items-center gap-2 px-4 py-2 text-xs font-black bg-main text-main-foreground border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000]">
             <BookOpen className="w-4 h-4" />
             <span>Overview</span>
@@ -472,7 +472,7 @@ export default function HomePage() {
       </div>
 
       {/* Main Grid Layout */}
-      <div className="max-w-[1200px] mx-auto px-6 sm:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
         
         {/* Left Columns (8/12) */}
         <div className="lg:col-span-8 space-y-6">
@@ -484,10 +484,10 @@ export default function HomePage() {
               <span>Actions Workspace</span>
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <Link
                 href={problems[0] ? `/problems/${problems[0].slug}` : "/problems"}
-                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-3 sm:p-4 flex flex-col justify-between items-start gap-3 h-[110px] sm:h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
                   <Play className="w-5 h-5 text-[#8bd600] group-hover:scale-110 transition-transform" />
@@ -505,7 +505,7 @@ export default function HomePage() {
 
               <Link
                 href="/problems"
-                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-3 sm:p-4 flex flex-col justify-between items-start gap-3 h-[110px] sm:h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
                   <Code className="w-5 h-5 text-[#7a83ff] group-hover:scale-110 transition-transform" />
@@ -521,7 +521,7 @@ export default function HomePage() {
 
               <Link
                 href="/arena"
-                className="bg-secondary-background border-2 border-black text-foreground p-4 flex flex-col justify-between items-start gap-3 h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
+                className="bg-secondary-background border-2 border-black text-foreground p-3 sm:p-4 flex flex-col justify-between items-start gap-3 h-[110px] sm:h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
                   <Swords className="w-5 h-5 text-[#f85149] group-hover:scale-110 transition-transform" />
