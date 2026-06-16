@@ -65,37 +65,37 @@ export function BadgeToaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade">
       {toasts.map((tb, index) => (
         <div 
           key={tb.id} 
-          className="absolute bg-secondary-background border-4 border-black p-8 rounded-2xl shadow-[8px_8px_0px_#000] w-[90%] max-w-sm text-center flex flex-col items-center animate-slide-up"
+          className="absolute bg-white/70 dark:bg-[#191221]/70 backdrop-blur-md border-4 border-black p-8 rounded-2xl shadow-[8px_8px_0px_#000] w-[90%] max-w-sm text-center flex flex-col items-center animate-slide-up"
           style={{ zIndex: 50 + index }}
         >
           <button 
             onClick={() => removeToast(tb.id)}
-            className="absolute top-4 right-4 text-zinc-400 hover:text-black transition-colors"
+            className="absolute top-4 right-4 text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
           
-          <div className="flex-shrink-0 bg-main/20 p-6 rounded-full border-4 border-main mb-6 transform hover:scale-110 transition-transform duration-300">
+          <div className="flex-shrink-0 bg-main/20 p-6 rounded-full border-4 border-main mb-6 transform hover:scale-110 transition-transform duration-300 shadow-[4px_4px_0px_#000]">
             {getIcon(tb.badge.icon_name, "w-24 h-24 text-main fill-current")}
           </div>
           
-          <div className="text-xs font-black uppercase font-mono text-main mb-2 tracking-widest">
+          <div className="text-xs font-black uppercase font-mono text-main mb-2 tracking-widest bg-main/10 px-3 py-1 rounded-full border-2 border-main">
             Badge Unlocked!
           </div>
           <div className="font-black text-3xl text-foreground leading-tight mb-3">
             {tb.badge.name}
           </div>
-          <div className="text-sm font-mono text-zinc-500 leading-relaxed mb-6">
+          <div className="text-sm font-mono text-foreground/70 leading-relaxed mb-6 font-bold">
             {tb.badge.description}
           </div>
           
           <button 
             onClick={() => handleAwesomeClick(tb.id)}
-            className="w-full py-3 bg-main text-black font-black font-mono border-2 border-black rounded-2xl hover:-translate-y-1 hover:shadow-[4px_4px_0px_#000] active:translate-y-0 active:shadow-none transition-all uppercase tracking-wide"
+            className="w-full py-3 bg-main text-main-foreground font-black font-mono border-2 border-black rounded-2xl hover:-translate-y-1 hover:shadow-[4px_4px_0px_#000] active:translate-y-0 active:shadow-none transition-all uppercase tracking-wide"
           >
             Awesome!
           </button>
