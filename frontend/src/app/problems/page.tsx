@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { listProblems, listMySubmissions } from "@/lib/api";
 import type { ProblemSummary } from "@/lib/types";
@@ -14,6 +14,64 @@ import {
   GitPullRequest,
   HelpCircle
 } from "lucide-react";
+
+function CustomDropdown({
+  value,
+  onChange,
+  options,
+  labelPrefix = "",
+  align = "left"
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  labelPrefix?: string;
+  align?: "left" | "right";
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((o) => o.value === value) || options[0];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full text-left appearance-none bg-secondary-background border-2 border-black text-foreground rounded-[6px] pl-3.5 pr-9 py-2 text-xs font-black outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all"
+      >
+        {labelPrefix}{selectedOption?.label}
+        <ChevronDown className={`w-4 h-4 text-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+      
+      {isOpen && (
+        <div className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-2 min-w-full whitespace-nowrap max-h-[50vh] overflow-y-auto bg-secondary-background/90 backdrop-blur-md border-2 border-black rounded-[6px] shadow-[4px_4px_0px_0px_#000] z-50 flex flex-col animate-in fade-in zoom-in-95 duration-100`}>
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`text-left px-4 py-2.5 text-xs font-black border-b-2 border-black last:border-b-0 hover:bg-main hover:text-main-foreground transition-colors ${value === opt.value ? 'bg-main/20' : ''}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProblemsPage() {
   const [problems, setProblems] = useState<ProblemSummary[]>([]);
@@ -127,40 +185,33 @@ export default function ProblemsPage() {
             />
           </div>
 
-          {/* Quick Dropdown Selectors */}
-          <div className="flex items-center gap-3.5 flex-wrap">
-            {/* Difficulty dropdown */}
-            <div className="relative">
-              <select
+            {/* Quick Dropdown Selectors */}
+            <div className="flex items-center gap-3.5 flex-wrap">
+              {/* Difficulty dropdown */}
+              <CustomDropdown
                 value={difficultyFilter}
-                onChange={(e) => setDifficultyFilter(e.target.value as any)}
-                className="appearance-none bg-secondary-background border-2 border-black text-foreground rounded-[6px] pl-3.5 pr-9 py-2 text-xs font-black cursor-pointer outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all"
-              >
-                <option value="all">Difficulty: All</option>
-                <option value="easy">Easy ({countEasy})</option>
-                <option value="medium">Medium ({countMedium})</option>
-                <option value="hard">Hard ({countHard})</option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+                onChange={(val) => setDifficultyFilter(val as any)}
+                labelPrefix="Difficulty: "
+                options={[
+                  { value: "all", label: "All" },
+                  { value: "easy", label: `Easy (${countEasy})` },
+                  { value: "medium", label: `Medium (${countMedium})` },
+                  { value: "hard", label: `Hard (${countHard})` }
+                ]}
+              />
 
-            {/* Topic label dropdown */}
-            <div className="relative">
-              <select
+              {/* Topic label dropdown */}
+              <CustomDropdown
                 value={topicFilter}
-                onChange={(e) => setTopicFilter(e.target.value)}
-                className="appearance-none bg-secondary-background border-2 border-black text-foreground rounded-[6px] pl-3.5 pr-9 py-2 text-xs font-black cursor-pointer outline-none shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all"
-              >
-                <option value="all">Label: All Topics</option>
-                {allTopics.map((topic) => (
-                  <option key={topic} value={topic}>
-                    Label: {topic}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                onChange={(val) => setTopicFilter(val)}
+                labelPrefix="Topic: "
+                align="right"
+                options={[
+                  { value: "all", label: "All" },
+                  ...allTopics.map(topic => ({ value: topic, label: topic }))
+                ]}
+              />
             </div>
-          </div>
         </div>
 
         {/* Problems Main Box - styled like Neobrutalist Directory */}
