@@ -7,3 +7,21 @@
 *.db
 *.sqlite
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+
+# Node
+node_modules/
+.next/
+dist/
+build/
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store
