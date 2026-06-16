@@ -26,16 +26,32 @@ import {
 /* ── Contribution Calendar Component ────────────────────────── */
 
 function ContributionCalendar({ submissions }: { submissions: SubmissionResponse[] }) {
-  const [tiles, setTiles] = useState<{ id: number; level: number }[]>([]);
+  const [tiles, setTiles] = useState<{ id: number; level: number; dateStr: string; count: number }[]>([]);
+  const [months, setMonths] = useState<{ label: string; colIndex: number }[]>([]);
 
   useEffect(() => {
     // Generate 371 grid tiles (53 weeks * 7 days)
-    const generated = Array.from({ length: 371 }, (_, idx) => ({ id: idx, level: 0 }));
-    
-    // Fill in activity based on actual submission history
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     
+    const generated: { id: number; level: number; dateStr: string; count: number }[] = [];
+    const monthLabels: { label: string; colIndex: number }[] = [];
+    
+    for (let i = 0; i < 371; i++) {
+      const d = new Date(today.getTime());
+      d.setDate(d.getDate() - (370 - i));
+      
+      const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      
+      if (d.getDate() === 1) {
+        const colIndex = Math.floor(i / 7);
+        monthLabels.push({ label: d.toLocaleDateString("en-US", { month: "short" }), colIndex });
+      }
+      
+      generated.push({ id: i, level: 0, count: 0, dateStr });
+    }
+    
+    // Fill in activity based on actual submission history
     submissions.forEach(sub => {
       if (!sub.created_at) return;
       const subDate = new Date(sub.created_at);
@@ -45,6 +61,7 @@ function ContributionCalendar({ submissions }: { submissions: SubmissionResponse
       if (diffDays >= 0 && diffDays < 371) {
         const tileIdx = 370 - diffDays;
         if (tileIdx >= 0 && tileIdx < 371) {
+          generated[tileIdx].count += 1;
           // Increment level, accepted solves count more
           const increment = sub.status === "accepted" ? 2 : 1;
           generated[tileIdx].level = Math.min(4, generated[tileIdx].level + increment);
@@ -53,6 +70,13 @@ function ContributionCalendar({ submissions }: { submissions: SubmissionResponse
     });
 
     setTiles(generated);
+    
+    // Filter months to avoid overlapping labels
+    const filteredMonths = monthLabels.filter((m, i, arr) => {
+      if (i === 0) return true;
+      return m.colIndex - arr[i-1].colIndex > 2; // At least 2 columns apart
+    });
+    setMonths(filteredMonths);
   }, [submissions]);
 
   // Purple theme levels
@@ -69,7 +93,7 @@ function ContributionCalendar({ submissions }: { submissions: SubmissionResponse
   ).size;
 
   return (
-    <div className="git-card p-5 animate-slide-up select-none">
+    <div className="git-card p-5 animate-slide-up select-none overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-black text-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -80,32 +104,43 @@ function ContributionCalendar({ submissions }: { submissions: SubmissionResponse
         </span>
       </div>
 
-      <div className="flex gap-2 items-start justify-center overflow-x-auto py-1">
-        {/* Day-of-week indicators */}
-        <div className="grid grid-rows-7 gap-[3px] text-[9px] text-muted-foreground pt-5 pr-1 font-mono font-bold">
-          <span>Mon</span>
-          <span className="invisible">Tue</span>
-          <span>Wed</span>
-          <span className="invisible">Thu</span>
-          <span>Fri</span>
-          <span className="invisible">Sat</span>
-          <span className="invisible">Sun</span>
+      <div className="flex flex-col overflow-x-auto py-1">
+        {/* Month Labels */}
+        <div className="relative h-4 w-full ml-[30px] mb-1 text-[10px] text-muted-foreground font-mono font-bold">
+          {months.map((m, idx) => (
+            <span key={idx} className="absolute" style={{ left: `${m.colIndex * 13}px` }}>
+              {m.label}
+            </span>
+          ))}
         </div>
 
-        {/* 53 Columns of 7 Rows */}
-        <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
-          {tiles.map((tile, i) => (
-            <div
-              key={tile.id}
-              className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-125 hover:ring-2 hover:ring-black cursor-pointer ${levelColors[tile.level]}`}
-              title={`Day ${371 - i} ago: Level ${tile.level} Activity`}
-            />
-          ))}
+        <div className="flex gap-2 items-start justify-start w-max">
+          {/* Day-of-week indicators */}
+          <div className="grid grid-rows-7 gap-[3px] text-[9px] text-muted-foreground pt-[1px] pr-1 font-mono font-bold">
+            <span>Mon</span>
+            <span className="invisible">Tue</span>
+            <span>Wed</span>
+            <span className="invisible">Thu</span>
+            <span>Fri</span>
+            <span className="invisible">Sat</span>
+            <span className="invisible">Sun</span>
+          </div>
+
+          {/* 53 Columns of 7 Rows */}
+          <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
+            {tiles.map((tile) => (
+              <div
+                key={tile.id}
+                className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-150 hover:ring-2 hover:ring-black hover:z-10 cursor-pointer ${levelColors[tile.level]}`}
+                title={tile.count > 0 ? `${tile.count} submissions on ${tile.dateStr}` : `No activity on ${tile.dateStr}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Calendar Legend */}
-      <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground mt-3 pr-2 font-mono font-bold">
+      <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground mt-3 font-mono font-bold">
         <span>Less</span>
         <span className="w-2.5 h-2.5 rounded-[1px] bg-background border border-black/20" />
         <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ebd5ff] border border-black/20" />
