@@ -185,11 +185,11 @@ export default function Sidebar() {
     <>
       {/* ── Desktop Sidebar (hidden on mobile) ──────────────── */}
       <aside
-        className={`sidebar-transition flex-shrink-0 hidden lg:flex flex-col bg-secondary-background border-r-4 border-black h-full select-none ${collapsed ? "w-[76px]" : "w-[240px]"
+        className={`sidebar-transition flex-shrink-0 hidden lg:flex flex-col bg-secondary-background border-r-4 border-black h-full overflow-hidden select-none ${collapsed ? "w-[76px]" : "w-[240px]"
           }`}
       >
         {/* Logo Container */}
-        <div className="flex items-center gap-3 px-4 h-[68px] flex-shrink-0 border-b-4 border-black">
+        <div className="flex items-center gap-3 px-4 h-[68px] flex-shrink-0 border-b-4 border-black bg-secondary-background z-10">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-md bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 shadow-[2px_2px_0px_0px_#000] logo-shake transition-transform">
               K
@@ -203,7 +203,7 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-5 space-y-2.5">
+        <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-5 space-y-2.5">
           {navItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;

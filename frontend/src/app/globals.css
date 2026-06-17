@@ -186,23 +186,76 @@
 }
 
 /* ── Custom Scrollbar ──────────────────────────────── */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+::-webkit-scrollbar,
+.scrollbar-thin::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--background);
+::-webkit-scrollbar-track,
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--secondary-background);
+  border-left: 2px solid var(--border);
+  border-top: 2px solid var(--border);
 }
 
-::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb,
+.scrollbar-thin::-webkit-scrollbar-thumb {
   background: var(--main);
-  border: 2.5px solid var(--background);
-  border-radius: 6px;
+  border: 2px solid var(--border);
+  border-radius: 0px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border);
+::-webkit-scrollbar-thumb:hover,
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-medium);
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: var(--main) var(--secondary-background);
+}
+
+/* Monaco Scrollbar Overrides for Neo-brutalism */
+.monaco-editor .monaco-scrollable-element > .scrollbar.vertical {
+  width: 14px !important;
+  border-left: 2px solid var(--border) !important;
+  background: var(--secondary-background) !important;
+}
+.monaco-editor .monaco-scrollable-element > .scrollbar.vertical > .slider {
+  background: var(--main) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: 0px !important;
+  width: 14px !important;
+  left: -2px !important;
+  opacity: 1 !important;
+}
+.monaco-editor .monaco-scrollable-element > .scrollbar.vertical > .slider:hover {
+  background: var(--color-medium) !important;
+}
+.monaco-editor .monaco-scrollable-element > .scrollbar.vertical > .slider.active {
+  background: var(--color-easy) !important;
+}
+
+.monaco-editor .monaco-scrollable-element > .scrollbar.horizontal {
+  height: 14px !important;
+  border-top: 2px solid var(--border) !important;
+  background: var(--secondary-background) !important;
+}
+.monaco-editor .monaco-scrollable-element > .scrollbar.horizontal > .slider {
+  background: var(--main) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: 0px !important;
+  height: 14px !important;
+  top: -2px !important;
+  opacity: 1 !important;
+}
+.monaco-editor .monaco-scrollable-element > .scrollbar.horizontal > .slider:hover {
+  background: var(--color-medium) !important;
+}
+.monaco-editor .monaco-scrollable-element > .scrollbar.horizontal > .slider.active {
+  background: var(--color-easy) !important;
 }
 
 /* ── Animations ───────────────────────────────────── */

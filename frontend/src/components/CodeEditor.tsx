@@ -38,6 +38,13 @@ export default function CodeEditor({
           smoothScrolling: true,
           renderLineHighlight: "gutter",
           bracketPairColorization: { enabled: true },
+          scrollbar: {
+            verticalScrollbarSize: 14,
+            horizontalScrollbarSize: 14,
+            verticalSliderSize: 14,
+            horizontalSliderSize: 14,
+            alwaysConsumeMouseWheel: false,
+          },
         }}
         beforeMount={(monaco) => {
           // Define KamiCode Neobrutalist dark theme
