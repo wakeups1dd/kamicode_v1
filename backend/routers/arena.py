@@ -11,7 +11,7 @@ from arena_state import arena_manager
 router = APIRouter(prefix="/api/arena", tags=["arena"])
 
 @router.websocket("/ws/{user_id}")
-async def arena_websocket(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)):
+async def arena_websocket(websocket: WebSocket, user_id: str, room_code: str = None, db: Session = Depends(get_db)):
     await arena_manager.connect(websocket)
     
     # Try to fetch user, fallback to simple ID
@@ -34,53 +34,67 @@ async def arena_websocket(websocket: WebSocket, user_id: str, db: Session = Depe
                     "state": arena_manager.active_matches[match_id]["state"]
                 })
         else:
-            # Matchmaking
-            if arena_manager.waiting_queue:
-                opponent_id, opp_username, opp_ws = arena_manager.waiting_queue.pop(0)
-                if opponent_id != user_id:
-                    match_id = str(uuid.uuid4())
-                    
-                    # Pick a random problem from the database
-                    problem = db.query(Problem).order_by(func.random()).first()
-                    # Fallback if DB is empty
-                    problem_id = problem.id if problem else 1
-                    problem_slug = problem.slug if problem else "two-sum"
-                    problem_title = problem.title if problem else "Two Sum"
-                    
-                    match_data = {
-                        "match_id": match_id,
-                        "problem_id": problem_id,
-                        "problem_slug": problem_slug,
-                        "problem_title": problem_title,
-                        "players": {
-                            user_id: {"ws": websocket, "username": username, "connected": True},
-                            opponent_id: {"ws": opp_ws, "username": opp_username, "connected": True}
-                        },
-                        "state": {
-                            user_id: {"status": "started", "passed_tests": 0, "total_tests": 0},
-                            opponent_id: {"status": "started", "passed_tests": 0, "total_tests": 0}
-                        }
+            # Matchmaking helper
+            async def create_match(opponent_id: str, opp_username: str, opp_ws: WebSocket):
+                match_id = str(uuid.uuid4())
+                
+                # Pick a random problem from the database
+                problem = db.query(Problem).order_by(func.random()).first()
+                # Fallback if DB is empty
+                problem_id = problem.id if problem else 1
+                problem_slug = problem.slug if problem else "two-sum"
+                problem_title = problem.title if problem else "Two Sum"
+                
+                match_data = {
+                    "match_id": match_id,
+                    "problem_id": problem_id,
+                    "problem_slug": problem_slug,
+                    "problem_title": problem_title,
+                    "players": {
+                        user_id: {"ws": websocket, "username": username, "connected": True},
+                        opponent_id: {"ws": opp_ws, "username": opp_username, "connected": True}
+                    },
+                    "state": {
+                        user_id: {"status": "started", "passed_tests": 0, "total_tests": 0},
+                        opponent_id: {"status": "started", "passed_tests": 0, "total_tests": 0}
                     }
-                    arena_manager.active_matches[match_id] = match_data
-                    arena_manager.user_to_match[user_id] = match_id
-                    arena_manager.user_to_match[opponent_id] = match_id
-                    
-                    await arena_manager.broadcast_to_match(match_id, {
-                        "type": "match_found",
-                        "match_id": match_id,
-                        "problem_id": problem_id,
-                        "problem_slug": problem_slug,
-                        "problem_title": problem_title,
-                        "players": [
-                            {"user_id": user_id, "username": username},
-                            {"user_id": opponent_id, "username": opp_username}
-                        ]
-                    })
+                }
+                arena_manager.active_matches[match_id] = match_data
+                arena_manager.user_to_match[user_id] = match_id
+                arena_manager.user_to_match[opponent_id] = match_id
+                
+                await arena_manager.broadcast_to_match(match_id, {
+                    "type": "match_found",
+                    "match_id": match_id,
+                    "problem_id": problem_id,
+                    "problem_slug": problem_slug,
+                    "problem_title": problem_title,
+                    "players": [
+                        {"user_id": user_id, "username": username},
+                        {"user_id": opponent_id, "username": opp_username}
+                    ]
+                })
+
+            if room_code:
+                if room_code in arena_manager.private_rooms:
+                    opponent_id, opp_username, opp_ws = arena_manager.private_rooms.pop(room_code)
+                    if opponent_id != user_id:
+                        await create_match(opponent_id, opp_username, opp_ws)
+                    else:
+                        arena_manager.private_rooms[room_code] = (user_id, username, websocket)
+                else:
+                    arena_manager.private_rooms[room_code] = (user_id, username, websocket)
+                    await websocket.send_json({"type": "waiting_private", "room_code": room_code})
+            else:
+                if arena_manager.waiting_queue:
+                    opponent_id, opp_username, opp_ws = arena_manager.waiting_queue.pop(0)
+                    if opponent_id != user_id:
+                        await create_match(opponent_id, opp_username, opp_ws)
+                    else:
+                        arena_manager.waiting_queue.append((user_id, username, websocket))
                 else:
                     arena_manager.waiting_queue.append((user_id, username, websocket))
-            else:
-                arena_manager.waiting_queue.append((user_id, username, websocket))
-                await websocket.send_json({"type": "waiting"})
+                    await websocket.send_json({"type": "waiting"})
 
         while True:
             data = await websocket.receive_text()

@@ -8,6 +8,9 @@ class ArenaState:
         # Queue: list of tuples (user_id, username, websocket)
         self.waiting_queue: List[Tuple[str, str, WebSocket]] = []
         
+        # Private rooms waiting queue: room_code -> (user_id, username, websocket)
+        self.private_rooms: Dict[str, Tuple[str, str, WebSocket]] = {}
+        
         # Active matches: match_id -> data
         self.active_matches: Dict[str, Dict[str, Any]] = {}
         
@@ -19,6 +22,12 @@ class ArenaState:
 
     def disconnect(self, websocket: WebSocket, user_id: str):
         self.waiting_queue = [x for x in self.waiting_queue if x[0] != user_id]
+        
+        # Remove from private rooms
+        keys_to_delete = [k for k, v in self.private_rooms.items() if v[0] == user_id]
+        for k in keys_to_delete:
+            del self.private_rooms[k]
+            
         match_id = self.user_to_match.get(user_id)
         if match_id and match_id in self.active_matches:
             # We don't delete the match immediately, but we could mark the user as disconnected

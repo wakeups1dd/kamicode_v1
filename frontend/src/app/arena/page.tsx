@@ -2,15 +2,19 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Swords, Loader2, Users } from "lucide-react";
+import { Swords, Loader2, Users, Globe, UserPlus, KeyRound, Copy, Check } from "lucide-react";
 import { getCurrentUser } from "@/lib/api";
 
 export default function ArenaLobby() {
   const router = useRouter();
-  const [status, setStatus] = useState<"idle" | "connecting" | "waiting" | "found">("idle");
+  const [status, setStatus] = useState<"idle" | "connecting" | "waiting" | "waiting_private" | "found">("idle");
+  const [mode, setMode] = useState<"select" | "friend" | "join">("select");
+  const [roomCode, setRoomCode] = useState("");
+  const [inputCode, setInputCode] = useState("");
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
-
+  
   useEffect(() => {
     return () => {
       if (socketRef.current) {
@@ -19,24 +23,32 @@ export default function ArenaLobby() {
     };
   }, []);
 
-  const startMatchmaking = async () => {
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(roomCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const startMatchmaking = async (code: string | null = null) => {
     setStatus("connecting");
     setError("");
     
     try {
-      // For local dev, we fetch a mock user
       const user = await getCurrentUser();
       const userId = user?.id || "mock-user-id";
       
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const wsBase = apiBase.replace(/^http/, "ws");
-      const wsUrl = `${wsBase}/api/arena/ws/${userId}`;
+      let wsUrl = `${wsBase}/api/arena/ws/${userId}`;
+      if (code) {
+        wsUrl += `?room_code=${code}`;
+      }
       
       const ws = new WebSocket(wsUrl);
       socketRef.current = ws;
 
       ws.onopen = () => {
-        setStatus("waiting");
+        // Will be updated by server messages
       };
 
       ws.onmessage = (event) => {
@@ -45,10 +57,12 @@ export default function ArenaLobby() {
           
           if (data.type === "waiting") {
             setStatus("waiting");
+          } else if (data.type === "waiting_private") {
+            setStatus("waiting_private");
+            setRoomCode(data.room_code);
           } else if (data.type === "match_found" || data.type === "reconnected") {
             setStatus("found");
             setTimeout(() => {
-              // Disconnect here, the battle page will reconnect
               ws.close();
               router.push(`/arena/${data.match_id}`);
             }, 1000);
@@ -65,7 +79,7 @@ export default function ArenaLobby() {
       };
 
       ws.onclose = () => {
-        if (status !== "found") {
+        if (status !== "found" && socketRef.current === ws) {
           setStatus("idle");
         }
       };
@@ -73,6 +87,26 @@ export default function ArenaLobby() {
       setError("Please log in before entering the Arena.");
       setStatus("idle");
     }
+  };
+
+  const handleCreateFriendMatch = () => {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    startMatchmaking(code);
+  };
+
+  const handleJoinFriendMatch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputCode.trim()) return;
+    startMatchmaking(inputCode.trim().toUpperCase());
+  };
+
+  const cancelMatchmaking = () => {
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+    setStatus("idle");
+    setMode("select");
   };
 
   return (
@@ -94,14 +128,75 @@ export default function ArenaLobby() {
           </div>
         )}
 
-        {status === "idle" && (
-          <button
-            onClick={startMatchmaking}
-            className="w-full bg-main text-main-foreground py-4 text-sm font-black uppercase tracking-widest border-2 border-black shadow-[3px_3px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2"
-          >
-            <Users className="w-5 h-5" />
-            Find Match
-          </button>
+        {status === "idle" && mode === "select" && (
+          <div className="w-full space-y-4">
+            <button
+              onClick={() => startMatchmaking(null)}
+              className="w-full bg-main text-main-foreground py-4 text-sm font-black uppercase tracking-widest border-2 border-black shadow-[3px_3px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2"
+            >
+              <Globe className="w-5 h-5" />
+              Play Online
+            </button>
+            <button
+              onClick={() => setMode("friend")}
+              className="w-full bg-background text-foreground py-4 text-sm font-black uppercase tracking-widest border-2 border-black shadow-[3px_3px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2"
+            >
+              <Users className="w-5 h-5" />
+              Play a Friend
+            </button>
+          </div>
+        )}
+
+        {status === "idle" && mode === "friend" && (
+          <div className="w-full space-y-4">
+            <button
+              onClick={handleCreateFriendMatch}
+              className="w-full bg-main text-main-foreground py-4 text-sm font-black uppercase tracking-widest border-2 border-black shadow-[3px_3px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2"
+            >
+              <UserPlus className="w-5 h-5" />
+              Create Match
+            </button>
+            <button
+              onClick={() => setMode("join")}
+              className="w-full bg-background text-foreground py-4 text-sm font-black uppercase tracking-widest border-2 border-black shadow-[3px_3px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2"
+            >
+              <KeyRound className="w-5 h-5" />
+              Join Match
+            </button>
+            <button
+              onClick={() => setMode("select")}
+              className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4 mt-2"
+            >
+              Back
+            </button>
+          </div>
+        )}
+
+        {status === "idle" && mode === "join" && (
+          <form onSubmit={handleJoinFriendMatch} className="w-full space-y-4">
+            <input
+              type="text"
+              placeholder="ENTER ROOM CODE"
+              value={inputCode}
+              onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+              className="w-full bg-background text-foreground py-4 px-4 text-center text-sm font-black uppercase tracking-widest border-2 border-black outline-none focus:border-main placeholder:text-muted-foreground/50"
+              maxLength={6}
+            />
+            <button
+              type="submit"
+              disabled={!inputCode.trim()}
+              className="w-full bg-main text-main-foreground py-4 text-sm font-black uppercase tracking-widest border-2 border-black shadow-[3px_3px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Join
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("friend")}
+              className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4 mt-2"
+            >
+              Back
+            </button>
+          </form>
         )}
 
         {status === "connecting" && (
@@ -118,13 +213,37 @@ export default function ArenaLobby() {
               Searching for Opponent
             </div>
             <button
-              onClick={() => {
-                socketRef.current?.close();
-                setStatus("idle");
-              }}
+              onClick={cancelMatchmaking}
               className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4"
             >
               Cancel Matchmaking
+            </button>
+          </div>
+        )}
+
+        {status === "waiting_private" && (
+          <div className="w-full flex flex-col items-center gap-4">
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              Waiting for friend to join...
+            </div>
+            <div className="w-full bg-background border-2 border-black p-4 flex flex-col items-center gap-3 relative">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Room Code</span>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-black tracking-widest text-main">{roomCode}</span>
+                <button 
+                  onClick={copyToClipboard}
+                  className="p-2 hover:bg-secondary-background rounded border-2 border-transparent hover:border-black transition-all group relative"
+                  title="Copy to clipboard"
+                >
+                  {copied ? <Check className="w-5 h-5 text-[#8bd600]" /> : <Copy className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />}
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={cancelMatchmaking}
+              className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4"
+            >
+              Cancel Match
             </button>
           </div>
         )}
