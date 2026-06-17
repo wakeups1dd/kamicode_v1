@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { getProblem, submitCode, pollSubmission, getAIAnalysis } from "@/lib/api";
 import type { ProblemDetail, SubmissionResponse, AIAnalysisResponse } from "@/lib/types";
 import ProblemPanel from "@/components/ProblemPanel";
@@ -31,7 +32,7 @@ export default function ProblemArenaPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"description" | "results" | "ai_eval">("description");
+  const [bottomTab, setBottomTab] = useState<"results" | "ai_eval">("results");
 
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -80,7 +81,7 @@ export default function ProblemArenaPage({
     if (!problem || isSubmitting) return;
 
     setIsSubmitting(true);
-    setActiveTab("results");
+    setBottomTab("results");
     setSubmission(null);
     setAiAnalysis(null);
     setIsAnalyzing(false);
@@ -205,105 +206,135 @@ export default function ProblemArenaPage({
 
       {/* ── Main Split Panel ────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel: Problem Description + Results */}
-        <div className="w-[45%] flex flex-col border-r-4 border-black">
-          {/* Tabs - folder style */}
-          <div className="flex border-b-4 border-black bg-secondary-background flex-shrink-0 px-3 pt-3.5 gap-1.5">
-            <button
-              onClick={() => setActiveTab("description")}
-              className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all rounded-t-[6px] border-2 border-black ${
-                activeTab === "description"
-                  ? "bg-background text-foreground border-b-transparent -mb-[4px] z-10"
-                  : "bg-background/40 text-foreground/60 border-b-black hover:bg-background/80"
-              }`}
-            >
-              Description
-            </button>
-            <button
-              onClick={() => setActiveTab("results")}
-              className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all rounded-t-[6px] border-2 border-black flex items-center ${
-                activeTab === "results"
-                  ? "bg-background text-foreground border-b-transparent -mb-[4px] z-10"
-                  : "bg-background/40 text-foreground/60 border-b-black hover:bg-background/80"
-              }`}
-            >
-              <span>Results</span>
-              {submission && (
-                <span
-                  className={`ml-2 w-2.5 h-2.5 rounded-full border border-black inline-block ${
-                    submission.status === "accepted"
-                      ? "bg-[#8bd600]"
-                      : submission.status === "pending" || submission.status === "running"
-                      ? "bg-[#ffbf00] animate-pulse"
-                      : "bg-[#f85149]"
-                  }`}
-                />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("ai_eval")}
-              className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all rounded-t-[6px] border-2 border-black flex items-center ${
-                activeTab === "ai_eval"
-                  ? "bg-background text-foreground border-b-transparent -mb-[4px] z-10"
-                  : "bg-background/40 text-foreground/60 border-b-black hover:bg-background/80"
-              }`}
-            >
-              <span>AI Eval</span>
-              {(isAnalyzing || aiAnalysis) && (
-                <span className={`ml-2 w-2 h-2 rounded-full border border-black inline-block ${isAnalyzing ? "bg-[#ffbf00] animate-pulse" : "bg-[#d67aff]"}`} />
-              )}
-            </button>
-          </div>
+        <PanelGroup direction="horizontal">
+          
+          {/* Left Panel: Problem Description */}
+          <Panel defaultSize={45} minSize={20} className="flex flex-col bg-background">
+            {/* Tabs - folder style */}
+            <div className="flex border-b-4 border-black bg-secondary-background flex-shrink-0 px-3 pt-3.5 gap-1.5">
+              <button
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider transition-all rounded-t-[6px] border-2 border-black bg-background text-foreground border-b-transparent -mb-[4px] z-10"
+              >
+                Description
+              </button>
+            </div>
 
-          {/* Tab Content */}
-          <div className="flex-1 overflow-hidden">
-            {activeTab === "description" ? (
+            {/* Tab Content */}
+            <div className="flex-1 overflow-hidden">
               <ProblemPanel problem={problem} />
-            ) : activeTab === "results" ? (
-              <div className="h-full overflow-y-auto p-4 bg-background space-y-4 scrollbar-thin">
-                <TerminalConsole submission={submission} isLoading={isSubmitting} />
-              </div>
-            ) : (
-              <div className="h-full overflow-y-auto p-4 bg-background space-y-4 scrollbar-thin">
-                {(isAnalyzing || aiAnalysis) ? (
-                  <AIAnalysisCard analysis={aiAnalysis} loading={isAnalyzing} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground font-mono font-bold">
-                    <svg className="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <p>Submit your code to see AI evaluation results.</p>
+            </div>
+          </Panel>
+
+          {/* Horizontal Resizer */}
+          <PanelResizeHandle className="w-2 bg-black hover:bg-main cursor-col-resize transition-colors flex flex-col items-center justify-center gap-1">
+            <div className="w-0.5 h-1 bg-white/50 rounded-full" />
+            <div className="w-0.5 h-1 bg-white/50 rounded-full" />
+            <div className="w-0.5 h-1 bg-white/50 rounded-full" />
+          </PanelResizeHandle>
+
+          {/* Right Panel: Code Editor + Results */}
+          <Panel minSize={30} className="flex flex-col">
+            <PanelGroup direction="vertical">
+              
+              {/* Top Right: Code Editor */}
+              <Panel defaultSize={65} minSize={20} className="flex flex-col bg-background">
+                {/* Editor Header */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-secondary-background border-b-4 border-black flex-shrink-0">
+                  <div className="flex items-center gap-2 text-xs font-mono text-foreground font-bold">
+                    <span className="px-2.5 py-0.5 rounded-xl bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000]">
+                      Python 3
+                    </span>
+                    <span className="text-black font-black">|</span>
+                    <span>solution.py</span>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono font-bold">
+                    <span>⏱ {problem.time_limit_ms}ms</span>
+                    <span className="text-black font-black">·</span>
+                    <span>💾 {Math.round(problem.memory_limit_kb / 1024)}MB</span>
+                  </div>
+                </div>
 
-        {/* Right Panel: Code Editor */}
-        <div className="flex-1 flex flex-col">
-          {/* Editor Header */}
-          <div className="flex items-center justify-between px-4 py-2.5 bg-secondary-background border-b-4 border-black flex-shrink-0">
-            <div className="flex items-center gap-2 text-xs font-mono text-foreground font-bold">
-              <span className="px-2.5 py-0.5 rounded-xl bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000]">
-                Python 3
-              </span>
-              <span className="text-black font-black">|</span>
-              <span>solution.py</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono font-bold">
-              <span>⏱ {problem.time_limit_ms}ms</span>
-              <span className="text-black font-black">·</span>
-              <span>💾 {Math.round(problem.memory_limit_kb / 1024)}MB</span>
-            </div>
-          </div>
+                {/* Editor */}
+                <div className="flex-1 p-3.5 bg-background overflow-hidden">
+                  <CodeEditor value={code} onChange={setCode} language="python" />
+                </div>
+              </Panel>
 
-          {/* Editor */}
-          <div className="flex-1 p-3.5 bg-background">
-            <CodeEditor value={code} onChange={setCode} language="python" />
-          </div>
-        </div>
+              {/* Vertical Resizer */}
+              <PanelResizeHandle className="h-2 bg-black hover:bg-main cursor-row-resize transition-colors flex items-center justify-center gap-1">
+                <div className="w-1 h-0.5 bg-white/50 rounded-full" />
+                <div className="w-1 h-0.5 bg-white/50 rounded-full" />
+                <div className="w-1 h-0.5 bg-white/50 rounded-full" />
+              </PanelResizeHandle>
+
+              {/* Bottom Right: Results & AI Eval */}
+              <Panel defaultSize={35} minSize={10} className="flex flex-col bg-background">
+                {/* Tabs - folder style */}
+                <div className="flex border-b-4 border-black bg-secondary-background flex-shrink-0 px-3 pt-2 gap-1.5">
+                  <button
+                    onClick={() => setBottomTab("results")}
+                    className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all rounded-t-[6px] border-2 border-black flex items-center ${
+                      bottomTab === "results"
+                        ? "bg-background text-foreground border-b-transparent -mb-[4px] z-10"
+                        : "bg-background/40 text-foreground/60 border-b-black hover:bg-background/80"
+                    }`}
+                  >
+                    <span>Test Result</span>
+                    {submission && (
+                      <span
+                        className={`ml-2 w-2.5 h-2.5 rounded-full border border-black inline-block ${
+                          submission.status === "accepted"
+                            ? "bg-[#8bd600]"
+                            : submission.status === "pending" || submission.status === "running"
+                            ? "bg-[#ffbf00] animate-pulse"
+                            : "bg-[#f85149]"
+                        }`}
+                      />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setBottomTab("ai_eval")}
+                    className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all rounded-t-[6px] border-2 border-black flex items-center ${
+                      bottomTab === "ai_eval"
+                        ? "bg-background text-foreground border-b-transparent -mb-[4px] z-10"
+                        : "bg-background/40 text-foreground/60 border-b-black hover:bg-background/80"
+                    }`}
+                  >
+                    <span>AI Eval</span>
+                    {(isAnalyzing || aiAnalysis) && (
+                      <span className={`ml-2 w-2 h-2 rounded-full border border-black inline-block ${isAnalyzing ? "bg-[#ffbf00] animate-pulse" : "bg-[#d67aff]"}`} />
+                    )}
+                  </button>
+                </div>
+
+                {/* Tab Content */}
+                <div className="flex-1 overflow-hidden">
+                  {bottomTab === "results" ? (
+                    <div className="h-full overflow-y-auto p-4 bg-background space-y-4 scrollbar-thin">
+                      <TerminalConsole submission={submission} isLoading={isSubmitting} />
+                    </div>
+                  ) : (
+                    <div className="h-full overflow-y-auto p-4 bg-background space-y-4 scrollbar-thin">
+                      {(isAnalyzing || aiAnalysis) ? (
+                        <AIAnalysisCard analysis={aiAnalysis} loading={isAnalyzing} />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground font-mono font-bold">
+                          <svg className="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          <p>Submit your code to see AI evaluation results.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </Panel>
+
+            </PanelGroup>
+          </Panel>
+        </PanelGroup>
       </div>
     </div>
   );
 }
+
