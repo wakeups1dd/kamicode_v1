@@ -97,11 +97,44 @@ async def arena_websocket(websocket: WebSocket, user_id: str, db: Session = Depe
                         "event": msg_type,
                         "user_id": user_id
                     })
+                elif msg_type == "evaluated":
+                    status = message.get("status")
+                    passed = message.get("passed_count", 0)
+                    total = message.get("total_count", 0)
+                    
+                    if user_id in arena_manager.active_matches[match_id]["state"]:
+                        arena_manager.active_matches[match_id]["state"][user_id]["status"] = status
+                        arena_manager.active_matches[match_id]["state"][user_id]["passed_tests"] = passed
+                        arena_manager.active_matches[match_id]["state"][user_id]["total_tests"] = total
+                    
+                    # Notify opponent of evaluation progress
+                    await arena_manager.broadcast_to_match(match_id, {
+                        "type": "opponent_evaluated",
+                        "user_id": user_id,
+                        "status": status,
+                        "passed_count": passed,
+                        "total_count": total
+                    })
+                    
+                    if status == "accepted":
+                        # This player won!
+                        await arena_manager.broadcast_to_match(match_id, {
+                            "type": "match_ended",
+                            "winner_id": user_id,
+                            "reason": "solved"
+                        })
                 elif msg_type == "leave":
+                    # Find opponent id
+                    opponent_id = None
+                    for pid in arena_manager.active_matches[match_id]["players"].keys():
+                        if pid != user_id:
+                            opponent_id = pid
+                            break
+                            
                     # Handle forfeit
                     await arena_manager.broadcast_to_match(match_id, {
                         "type": "match_ended",
-                        "winner_id": "opponent",
+                        "winner_id": opponent_id,
                         "reason": "forfeit"
                     })
                     break

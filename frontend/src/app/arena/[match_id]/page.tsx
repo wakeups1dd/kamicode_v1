@@ -172,6 +172,15 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
         data: finalResult
       });
 
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "evaluated",
+          status: finalResult.status,
+          passed_count: finalResult.passed_count || 0,
+          total_count: finalResult.total_count || 0
+        }));
+      }
+
       if (finalResult.status === "accepted") {
         pollAIAnalysis(result.id);
       }
