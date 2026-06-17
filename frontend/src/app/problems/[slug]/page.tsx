@@ -237,26 +237,29 @@ export default function ProblemArenaPage({
             <PanelGroup direction="vertical">
               
               {/* Top Right: Code Editor */}
-              <Panel defaultSize={65} minSize={20} className="flex flex-col bg-background">
-                {/* Editor Header */}
-                <div className="flex items-center justify-between px-4 py-2.5 bg-secondary-background border-b-4 border-black flex-shrink-0">
-                  <div className="flex items-center gap-2 text-xs font-mono text-foreground font-bold">
-                    <span className="px-2.5 py-0.5 rounded-xl bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000]">
-                      Python 3
-                    </span>
-                    <span className="text-black font-black">|</span>
-                    <span>solution.py</span>
+              <Panel defaultSize={65} minSize={20} className="flex flex-col bg-background p-4">
+                <div className="h-full flex flex-col bg-background rounded-xl border-2 border-black overflow-hidden shadow-[3px_3px_0px_0px_#000]">
+                  {/* Editor Header */}
+                  <div className="flex items-center justify-between px-4.5 py-3 bg-secondary-background border-b-2 border-black flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-[#f85149] border border-black" />
+                        <div className="w-3 h-3 rounded-full bg-[#ffbf00] border border-black" />
+                        <div className="w-3 h-3 rounded-full bg-[#8bd600] border border-black" />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-wider text-foreground ml-2">solution.py</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-mono text-foreground font-bold">
+                      <span className="px-2.5 py-0.5 rounded-xl bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000]">
+                        Python 3
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono font-bold">
-                    <span>⏱ {problem.time_limit_ms}ms</span>
-                    <span className="text-black font-black">·</span>
-                    <span>💾 {Math.round(problem.memory_limit_kb / 1024)}MB</span>
-                  </div>
-                </div>
 
-                {/* Editor */}
-                <div className="flex-1 p-3.5 bg-background overflow-hidden">
-                  <CodeEditor value={code} onChange={setCode} language="python" />
+                  {/* Editor */}
+                  <div className="flex-1 overflow-hidden relative">
+                    <CodeEditor value={code} onChange={setCode} language="python" />
+                  </div>
                 </div>
               </Panel>
 
