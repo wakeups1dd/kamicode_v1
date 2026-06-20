@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { getCohortDetail, getCohortLeaderboard, leaveCohort, updateCohort, deleteCohort } from "@/lib/api";
+import { getCohortDetail, getCohortLeaderboard, leaveCohort, updateCohort, deleteCohort, getTodayChallenge, setTodayChallenge } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import type { CohortDetailResponse, LeaderboardEntry } from "@/lib/types";
-import { Users, ShieldCheck, Clipboard, Check, FolderOpen, ArrowLeft, LogOut, Trash2, Edit } from "lucide-react";
+import { Users, ShieldCheck, Clipboard, Check, FolderOpen, ArrowLeft, LogOut, Trash2, Edit, Calendar, Code, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ConfirmModal";
 
@@ -22,6 +22,9 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
   const [editingCohort, setEditingCohort] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  const [dailyChallenge, setDailyChallenge] = useState<any>(null);
+  const [challengeInputId, setChallengeInputId] = useState("");
+  const [challengeLoading, setChallengeLoading] = useState(false);
   
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -58,6 +61,13 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
       setEditingCohort(false);
       const lb = await getCohortLeaderboard(detail.id);
       setLeaderboard(lb);
+      
+      try {
+        const challenge = await getTodayChallenge(cohortSlug);
+        setDailyChallenge(challenge);
+      } catch (e) {
+        setDailyChallenge(null);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to load cohort details.");
     } finally {
@@ -136,6 +146,21 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
       showAlert(err.message || "Failed to update league.", true);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleSetChallenge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!challengeInputId || isNaN(Number(challengeInputId))) return;
+    setChallengeLoading(true);
+    try {
+      const challenge = await setTodayChallenge(slug, Number(challengeInputId));
+      setDailyChallenge(challenge);
+      setChallengeInputId("");
+    } catch (err: any) {
+      showAlert(err.message || "Failed to set challenge.", true);
+    } finally {
+      setChallengeLoading(false);
     }
   };
 
@@ -307,6 +332,56 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
                 <p className="text-[10px] text-muted-foreground font-mono leading-tight">
                   Share this code with students to let them join this coding league automatically.
                 </p>
+              </div>
+
+              {/* Daily Challenge Block */}
+              <div className="bg-background border-2 border-black rounded-xl shadow-[4px_4px_0px_#000] p-4 mt-4 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="w-5 h-5 text-main" />
+                  <h3 className="font-black uppercase tracking-tight text-sm">Daily Challenge</h3>
+                </div>
+                
+                {dailyChallenge ? (
+                  <div className="bg-secondary-background border-2 border-black p-3 rounded-xl flex flex-col gap-2">
+                    <div className="text-xs font-bold text-muted-foreground">Today's Problem:</div>
+                    <div className="font-black text-main">{dailyChallenge.problem_title || `Problem ID: ${dailyChallenge.problem_id}`}</div>
+                    {dailyChallenge.problem_slug && (
+                      <button 
+                        onClick={() => router.push(`/problems/${dailyChallenge.problem_slug}`)}
+                        className="w-full bg-main text-main-foreground font-black uppercase text-xs py-2 rounded border-2 border-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_#000]"
+                      >
+                        Solve Now
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-xs font-bold text-muted-foreground bg-secondary-background border-2 border-black border-dashed p-3 rounded-xl text-center">
+                    No challenge set for today.
+                  </div>
+                )}
+
+                {isAdmin && (
+                  <form onSubmit={handleSetChallenge} className="pt-2 border-t-2 border-black mt-2 flex flex-col gap-2">
+                    <span className="text-[10px] font-black uppercase text-zinc-500">Admin: Set Challenge</span>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="Problem ID"
+                        value={challengeInputId}
+                        onChange={(e) => setChallengeInputId(e.target.value)}
+                        className="flex-1 px-2 py-1 border-2 border-black rounded bg-background text-xs font-bold"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={challengeLoading}
+                        className="bg-main text-main-foreground font-black px-3 py-1 rounded border-2 border-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none text-xs"
+                      >
+                        Set
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
 

@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from database import get_db
-from models import Cohort, CohortMember, User, DailyChallenge
-from schemas import CohortCreate, CohortUpdate, CohortResponse, CohortDetailResponse, CohortMemberResponse
+from database import get_db
+from models import Cohort, CohortMember, User, DailyChallenge, Problem
+from schemas import CohortCreate, CohortUpdate, CohortResponse, CohortDetailResponse, CohortMemberResponse, DailyChallengeCreate, DailyChallengeResponse
 from auth import get_current_user
 
 router = APIRouter(prefix="/api/cohorts", tags=["cohorts"])
@@ -263,3 +264,150 @@ def delete_cohort(
     db.delete(cohort)
     db.commit()
     return None
+
+
+from datetime import date
+from sqlalchemy.sql.expression import func
+from models import Problem
+from schemas import DailyChallengeResponse
+
+@router.get("/{slug}/daily-challenge", response_model=DailyChallengeResponse)
+def get_daily_challenge(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get or generate the daily challenge for a cohort."""
+    cohort = db.query(Cohort).filter(Cohort.slug == slug).first()
+    if not cohort:
+        raise HTTPException(status_code=404, detail="Cohort not found")
+
+    is_member = db.query(CohortMember).filter(
+        CohortMember.cohort_id == cohort.id,
+        CohortMember.user_id == current_user.id
+    ).first()
+    if not is_member:
+        raise HTTPException(status_code=403, detail="Not a member of this cohort")
+
+    today = date.today()
+    challenge = db.query(DailyChallenge).filter(
+        DailyChallenge.cohort_id == cohort.id,
+        DailyChallenge.date == today
+    ).first()
+
+    if not challenge:
+        # Create one randomly
+        problem = db.query(Problem).order_by(func.random()).first()
+        if not problem:
+            raise HTTPException(status_code=404, detail="No problems available")
+
+        challenge = DailyChallenge(
+            cohort_id=cohort.id,
+            problem_id=problem.id,
+            date=today
+        )
+        db.add(challenge)
+        db.commit()
+        db.refresh(challenge)
+    else:
+        problem = db.query(Problem).filter(Problem.id == challenge.problem_id).first()
+
+    return {
+        "id": challenge.id,
+        "cohort_id": challenge.cohort_id,
+        "problem_id": challenge.problem_id,
+        "date": challenge.date,
+        "problem_slug": problem.slug,
+        "problem_title": problem.title
+    }
+
+import datetime
+
+@router.get("/{slug}/challenges/today", response_model=DailyChallengeResponse)
+def get_today_challenge(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get the daily challenge for the cohort."""
+    cohort = db.query(Cohort).filter(Cohort.slug == slug).first()
+    if not cohort:
+        raise HTTPException(status_code=404, detail="Cohort not found")
+
+    is_member = db.query(CohortMember).filter(
+        CohortMember.cohort_id == cohort.id,
+        CohortMember.user_id == current_user.id
+    ).first()
+    if not is_member:
+        raise HTTPException(status_code=403, detail="Not a member of this cohort")
+
+    today = datetime.datetime.now().date()
+    challenge = db.query(DailyChallenge).filter(
+        DailyChallenge.cohort_id == cohort.id,
+        DailyChallenge.date == today
+    ).first()
+
+    if not challenge:
+        raise HTTPException(status_code=404, detail="No challenge for today")
+
+    problem = db.query(Problem).filter(Problem.id == challenge.problem_id).first()
+    
+    return DailyChallengeResponse(
+        id=challenge.id,
+        cohort_id=challenge.cohort_id,
+        problem_id=challenge.problem_id,
+        date=challenge.date,
+        problem_title=problem.title if problem else None,
+        problem_slug=problem.slug if problem else None
+    )
+
+
+@router.post("/{slug}/challenges", response_model=DailyChallengeResponse)
+def set_today_challenge(
+    slug: str,
+    payload: DailyChallengeCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Admin sets the daily challenge."""
+    cohort = db.query(Cohort).filter(Cohort.slug == slug).first()
+    if not cohort:
+        raise HTTPException(status_code=404, detail="Cohort not found")
+
+    member = db.query(CohortMember).filter(
+        CohortMember.cohort_id == cohort.id,
+        CohortMember.user_id == current_user.id
+    ).first()
+    
+    if not member or member.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can set challenges")
+
+    today = datetime.datetime.now().date()
+    challenge = db.query(DailyChallenge).filter(
+        DailyChallenge.cohort_id == cohort.id,
+        DailyChallenge.date == today
+    ).first()
+
+    if challenge:
+        challenge.problem_id = payload.problem_id
+    else:
+        challenge = DailyChallenge(
+            cohort_id=cohort.id,
+            problem_id=payload.problem_id,
+            date=today
+        )
+        db.add(challenge)
+
+    db.commit()
+    db.refresh(challenge)
+
+    problem = db.query(Problem).filter(Problem.id == challenge.problem_id).first()
+
+    return DailyChallengeResponse(
+        id=challenge.id,
+        cohort_id=challenge.cohort_id,
+        problem_id=challenge.problem_id,
+        date=challenge.date,
+        problem_title=problem.title if problem else None,
+        problem_slug=problem.slug if problem else None
+    )

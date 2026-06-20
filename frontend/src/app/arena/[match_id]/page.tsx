@@ -20,6 +20,31 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
   const [problem, setProblem] = useState<ProblemDetail | null>(null);
   const [sourceCode, setSourceCode] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"description" | "submissions">("description");
+  const [language, setLanguage] = useState<"python" | "javascript" | "cpp" | "java">("python");
+
+  const defaultSnippets = {
+    python: "# Write your solution here\n",
+    javascript: "function solve() {\n  // Write your solution here\n}\n",
+    cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n  // Write your solution here\n  return 0;\n}\n",
+    java: "public class Main {\n  public static void main(String[] args) {\n    // Write your solution here\n  }\n}\n"
+  };
+
+  const handleLanguageChange = (newLang: "python" | "javascript" | "cpp" | "java") => {
+    setLanguage(newLang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("kamicode_preferred_language", newLang);
+    }
+    setSourceCode(newLang === "python" ? (problem?.starter_code || defaultSnippets.python) : defaultSnippets[newLang]);
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedLang = localStorage.getItem("kamicode_preferred_language");
+      if (savedLang && ["python", "javascript", "cpp", "java"].includes(savedLang)) {
+        setLanguage(savedLang as any);
+      }
+    }
+  }, []);
 
   // Arena State
   const [ws, setWs] = useState<WebSocket | null>(null);
@@ -154,7 +179,7 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
       await new Promise(r => setTimeout(r, 500));
       const result = await submitCode({
         problem_id: problem.id,
-        language: "python",
+        language: language,
         source_code: sourceCode,
       });
       
@@ -274,9 +299,22 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
 
         {/* Right Side: Editor & Console */}
         <div className="w-1/2 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2 bg-secondary-background border-b-2 border-black flex-shrink-0">
+            <span className="text-xs font-black uppercase tracking-wider text-foreground">Editor</span>
+            <select 
+              value={language}
+              onChange={(e) => handleLanguageChange(e.target.value as any)}
+              className="px-2 py-1 rounded-xl bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000] outline-none cursor-pointer"
+            >
+              <option value="python">Python 3</option>
+              <option value="javascript">JavaScript</option>
+              <option value="cpp">C++</option>
+              <option value="java">Java</option>
+            </select>
+          </div>
           <div className="flex-1 min-h-0 relative">
             <CodeEditor
-              language="python"
+              language={language}
               value={sourceCode}
               onChange={handleEditorChange}
             />

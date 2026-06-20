@@ -36,13 +36,30 @@ export default function ProblemArenaPage({
 
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [language, setLanguage] = useState<"python" | "javascript" | "cpp" | "java">("python");
+
+  const defaultSnippets = {
+    python: "# Write your solution here\n",
+    javascript: "function solve() {\n  // Write your solution here\n}\n",
+    cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n  // Write your solution here\n  return 0;\n}\n",
+    java: "public class Main {\n  public static void main(String[] args) {\n    // Write your solution here\n  }\n}\n"
+  };
 
   useEffect(() => {
     getProblem(slug)
       .then((p) => {
         setProblem(p);
-        const savedCode = typeof window !== "undefined" ? localStorage.getItem(`kamicode_code_${p.slug}`) : null;
-        setCode(savedCode || p.starter_code || "# Write your solution here\n");
+        let initLang = "python" as "python" | "javascript" | "cpp" | "java";
+        if (typeof window !== "undefined") {
+          const savedLang = localStorage.getItem("kamicode_preferred_language");
+          if (savedLang && ["python", "javascript", "cpp", "java"].includes(savedLang)) {
+            initLang = savedLang as "python" | "javascript" | "cpp" | "java";
+          }
+        }
+        setLanguage(initLang);
+        const savedCode = typeof window !== "undefined" ? localStorage.getItem(`kamicode_code_${p.slug}_${initLang}`) : null;
+        const fallbackSnippet = initLang === "python" ? (p.starter_code || defaultSnippets.python) : defaultSnippets[initLang];
+        setCode(savedCode || fallbackSnippet);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -51,9 +68,23 @@ export default function ProblemArenaPage({
   // Save code to localStorage on edit
   useEffect(() => {
     if (problem && code) {
-      localStorage.setItem(`kamicode_code_${problem.slug}`, code);
+      localStorage.setItem(`kamicode_code_${problem.slug}_${language}`, code);
     }
-  }, [code, problem]);
+  }, [code, problem, language]);
+
+  const handleLanguageChange = (newLang: "python" | "javascript" | "cpp" | "java") => {
+    setLanguage(newLang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("kamicode_preferred_language", newLang);
+    }
+    if (!problem) return;
+    const savedCode = localStorage.getItem(`kamicode_code_${problem.slug}_${newLang}`);
+    if (savedCode) {
+      setCode(savedCode);
+    } else {
+      setCode(newLang === "python" ? (problem.starter_code || defaultSnippets.python) : defaultSnippets[newLang]);
+    }
+  };
 
   const pollAIAnalysis = async (submissionId: number) => {
     setIsAnalyzing(true);
@@ -89,7 +120,7 @@ export default function ProblemArenaPage({
     try {
       const sub = await submitCode({
         problem_id: problem.id,
-        language: "python",
+        language: language,
         source_code: code,
       });
       setSubmission(sub);
@@ -250,15 +281,22 @@ export default function ProblemArenaPage({
                       <span className="text-xs font-black uppercase tracking-wider text-foreground ml-2">solution.py</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-mono text-foreground font-bold">
-                      <span className="px-2.5 py-0.5 rounded-xl bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000]">
-                        Python 3
-                      </span>
+                      <select 
+                        value={language}
+                        onChange={(e) => handleLanguageChange(e.target.value as any)}
+                        className="px-2 py-1 rounded-xl bg-[#d67aff] text-black border-2 border-black text-[10px] font-black uppercase shadow-[1px_1px_0px_0px_#000] outline-none cursor-pointer"
+                      >
+                        <option value="python">Python 3</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="cpp">C++</option>
+                        <option value="java">Java</option>
+                      </select>
                     </div>
                   </div>
 
                   {/* Editor */}
                   <div className="flex-1 overflow-hidden relative">
-                    <CodeEditor value={code} onChange={setCode} language="python" />
+                    <CodeEditor value={code} onChange={setCode} language={language} />
                   </div>
                 </div>
               </Panel>

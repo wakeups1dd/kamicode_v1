@@ -6,9 +6,39 @@ from sqlalchemy.sql.expression import func
 
 from database import get_db
 from models import User, Problem
+from auth import get_current_user
 from arena_state import arena_manager
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/arena", tags=["arena"])
+
+class ArenaInvite(BaseModel):
+    target_user_id: str
+    room_code: str
+
+@router.post("/invite")
+def send_arena_invite(payload: ArenaInvite, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    target = payload.target_user_id
+    if target not in arena_manager.match_invites:
+        arena_manager.match_invites[target] = []
+    
+    # Remove old invites from same sender
+    arena_manager.match_invites[target] = [inv for inv in arena_manager.match_invites[target] if inv["sender_id"] != current_user.id]
+    
+    arena_manager.match_invites[target].append({
+        "room_code": payload.room_code,
+        "sender_id": current_user.id,
+        "sender_name": current_user.display_name or current_user.username
+    })
+    return {"status": "ok"}
+
+@router.get("/invites")
+def get_arena_invites(current_user: User = Depends(get_current_user)):
+    invites = arena_manager.match_invites.get(current_user.id, [])
+    # Clear them once fetched so they don't pop up forever
+    if current_user.id in arena_manager.match_invites:
+        arena_manager.match_invites[current_user.id] = []
+    return invites
 
 @router.websocket("/ws/{user_id}")
 async def arena_websocket(websocket: WebSocket, user_id: str, room_code: str = None, db: Session = Depends(get_db)):

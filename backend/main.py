@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from config import settings
 from database import engine, Base
 from models import Problem, Submission, User, AIAnalysis, Badge, UserBadge, UserStat  # noqa: F401 — ensures tables are registered
-from routers import problems, submissions, analysis, cohorts, leaderboard, streaks, arena, badges
+from routers import problems, submissions, analysis, cohorts, leaderboard, streaks, arena, badges, friends
 
 
 @asynccontextmanager
@@ -51,6 +51,7 @@ app.include_router(leaderboard.router)
 app.include_router(streaks.router)
 app.include_router(arena.router)
 app.include_router(badges.router)
+app.include_router(friends.router)
 
 
 @app.get("/")

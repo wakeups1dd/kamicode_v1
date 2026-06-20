@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Swords, Loader2, Users, Globe, UserPlus, KeyRound, Copy, Check } from "lucide-react";
-import { getCurrentUser } from "@/lib/api";
+import { getCurrentUser, getFriends, FriendshipResponse, sendArenaInvite, getArenaInvites } from "@/lib/api";
 
 export default function ArenaLobby() {
   const router = useRouter();
@@ -13,15 +13,38 @@ export default function ArenaLobby() {
   const [inputCode, setInputCode] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [friends, setFriends] = useState<FriendshipResponse[]>([]);
+  const [incomingInvites, setIncomingInvites] = useState<{room_code: string, sender_id: string, sender_name: string}[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
-  
+
   useEffect(() => {
+    // Fetch friends initially
+    getFriends().then(f => setFriends(f.filter(fr => fr.status === "accepted"))).catch(() => {});
+    
+    // Poll for invites
+    const interval = setInterval(() => {
+      if (status === "idle") {
+        getArenaInvites().then(invs => {
+          if (invs && invs.length > 0) {
+            setIncomingInvites(prev => {
+              const newInvs = [...prev];
+              invs.forEach(inv => {
+                if (!newInvs.find(i => i.room_code === inv.room_code)) newInvs.push(inv);
+              });
+              return newInvs;
+            });
+          }
+        }).catch(() => {});
+      }
+    }, 2000);
+
     return () => {
+      clearInterval(interval);
       if (socketRef.current) {
         socketRef.current.close();
       }
     };
-  }, []);
+  }, [status]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(roomCode);
@@ -89,8 +112,17 @@ export default function ArenaLobby() {
     }
   };
 
-  const handleCreateFriendMatch = () => {
+  const handleCreateFriendMatch = async (inviteFriendId?: string) => {
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    if (inviteFriendId) {
+      try {
+        await sendArenaInvite(inviteFriendId, code);
+      } catch (err) {
+        console.error("Failed to send invite", err);
+      }
+    }
+
     startMatchmaking(code);
   };
 
@@ -144,6 +176,28 @@ export default function ArenaLobby() {
               <Users className="w-5 h-5" />
               Play a Friend
             </button>
+
+            {incomingInvites.length > 0 && (
+              <div className="mt-4 p-4 border-2 border-black bg-secondary-background">
+                <h3 className="text-xs font-black uppercase text-main mb-2">Incoming Invites</h3>
+                <div className="space-y-2">
+                  {incomingInvites.map((inv, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-background p-2 border-2 border-black">
+                      <span className="text-xs font-bold">{inv.sender_name}</span>
+                      <button
+                        onClick={() => {
+                          setIncomingInvites(prev => prev.filter(i => i.room_code !== inv.room_code));
+                          startMatchmaking(inv.room_code);
+                        }}
+                        className="bg-[#8bd600] text-black px-3 py-1 text-xs font-black uppercase border-2 border-black shadow-[1px_1px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
+                      >
+                        Accept
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -163,6 +217,29 @@ export default function ArenaLobby() {
               <KeyRound className="w-5 h-5" />
               Join Match
             </button>
+
+            {friends.length > 0 && (
+              <div className="mt-4 border-t-2 border-black pt-4">
+                <h3 className="text-xs font-black text-muted-foreground uppercase mb-2">Invite Online Friend</h3>
+                <div className="max-h-40 overflow-y-auto space-y-2 scrollbar-thin">
+                  {friends.map(f => {
+                    const fname = f.friend_display_name || f.friend_username;
+                    return (
+                      <div key={f.id} className="flex items-center justify-between bg-secondary-background border-2 border-black p-2 rounded">
+                        <span className="text-xs font-bold truncate max-w-[120px]">{fname}</span>
+                        <button
+                          onClick={() => handleCreateFriendMatch(f.friend_id)}
+                          className="bg-main text-main-foreground px-2 py-1 text-[10px] font-black uppercase border-2 border-black shadow-[1px_1px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
+                        >
+                          Invite
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <button
               onClick={() => setMode("select")}
               className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4 mt-2"

@@ -16,6 +16,9 @@ class ArenaState:
         
         # Map user_id to match_id
         self.user_to_match: Dict[str, str] = {}
+        
+        # Match invites: target_user_id -> list of {"room_code": str, "sender_id": str, "sender_name": str}
+        self.match_invites: Dict[str, List[Dict[str, str]]] = {}
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()

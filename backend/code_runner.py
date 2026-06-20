@@ -33,36 +33,69 @@ async def run_code_local(
     if timeout_sec is None:
         timeout_sec = settings.code_runner_timeout_sec
 
-    if language != "python":
+    if language not in ["python", "javascript", "cpp", "java"]:
         return {
             "stdout": "",
-            "stderr": f"Language '{language}' is not supported in local mode. Only Python is available.",
+            "stderr": f"Language '{language}' is not supported in local mode.",
             "returncode": -1,
             "status": "error",
             "time_ms": 0,
         }
 
     # Write source code to a temporary file
-    tmp_file = None
-    try:
-        tmp_file = tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".py",
-            delete=False,
-            prefix="kamicode_",
-        )
-        tmp_file.write(source_code)
-        tmp_file.flush()
-        tmp_file.close()
+    tmp_dir = tempfile.mkdtemp(prefix="kamicode_")
+    
+    # Determine file extension
+    ext_map = {"python": ".py", "javascript": ".js", "cpp": ".cpp", "java": ".java"}
+    
+    # For Java 11+ single-file execution, filename doesn't need to strictly match class unless public,
+    # but we'll use a generic name.
+    file_name = f"Main{ext_map[language]}"
+    file_path = os.path.join(tmp_dir, file_name)
 
-        # Run in subprocess with timeout
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(source_code)
+
         import time
         start_time = time.perf_counter()
 
+        # Handle compilation if needed (C++)
+        exe_path = None
+        if language == "cpp":
+            exe_path = os.path.join(tmp_dir, "a.exe" if os.name == "nt" else "a.out")
+            compile_proc = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: subprocess.run(
+                    ["g++", file_path, "-o", exe_path],
+                    capture_output=True, text=True
+                )
+            )
+            if compile_proc.returncode != 0:
+                return {
+                    "stdout": "",
+                    "stderr": "Compilation Error:\n" + compile_proc.stderr,
+                    "returncode": compile_proc.returncode,
+                    "status": "compilation_error",
+                    "time_ms": 0,
+                }
+
+        # Determine execution command
+        if language == "python":
+            cmd = ["python", file_path]
+        elif language == "javascript":
+            cmd = ["node", file_path]
+        elif language == "java":
+            # Java 11+ supports running source files directly
+            cmd = ["java", file_path]
+        elif language == "cpp":
+            cmd = [exe_path]
+
+        # Run in subprocess with timeout
         result = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: subprocess.run(
-                ["python", tmp_file.name],
+                cmd,
                 input=stdin,
                 capture_output=True,
                 text=True,
@@ -72,10 +105,7 @@ async def run_code_local(
 
         elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
-        if result.returncode == 0:
-            status = "success"
-        else:
-            status = "runtime_error"
+        status = "success" if result.returncode == 0 else "runtime_error"
 
         return {
             "stdout": result.stdout,
@@ -102,11 +132,9 @@ async def run_code_local(
             "time_ms": 0,
         }
     finally:
-        if tmp_file and os.path.exists(tmp_file.name):
-            try:
-                os.unlink(tmp_file.name)
-            except OSError:
-                pass
+        import shutil
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 async def run_test_case_local(

@@ -181,3 +181,21 @@ class UserStat(Base):
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
     arena_matches = Column(Integer, default=0)
     arena_wins = Column(Integer, default=0)
+
+
+class FriendshipStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class Friendship(Base):
+    """Tracks friend requests and accepted friends."""
+    __tablename__ = "friendships"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    friend_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    status = Column(SQLEnum(FriendshipStatus), nullable=False, default=FriendshipStatus.PENDING)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+

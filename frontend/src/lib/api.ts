@@ -204,6 +204,39 @@ export async function deleteCohort(slug: string): Promise<void> {
   });
 }
 
+export interface DailyChallengeResponse {
+  id: number;
+  cohort_id: number;
+  problem_id: number;
+  date: string;
+  problem_slug: string;
+  problem_title: string;
+}
+
+export async function getCohortDailyChallenge(slug: string): Promise<DailyChallengeResponse> {
+  return apiFetch<DailyChallengeResponse>(`/api/cohorts/${slug}/daily-challenge`);
+}
+
+// ---------- Cohort Challenges ----------
+
+export async function getTodayChallenge(slug: string): Promise<{
+  id: number;
+  cohort_id: number;
+  problem_id: number;
+  date: string;
+  problem_title: string | null;
+  problem_slug: string | null;
+}> {
+  return apiFetch(`/api/cohorts/${slug}/challenges/today`);
+}
+
+export async function setTodayChallenge(slug: string, problemId: number): Promise<any> {
+  return apiFetch(`/api/cohorts/${slug}/challenges`, {
+    method: "POST",
+    body: JSON.stringify({ problem_id: problemId }),
+  });
+}
+
 // ---------- Streaks ----------
 
 export async function getMyStreak(): Promise<UserStreakResponse> {
@@ -218,4 +251,51 @@ export async function getMyBadges(): Promise<UserBadgeResponse[]> {
 
 export async function getAllBadges(): Promise<BadgeResponse[]> {
   return apiFetch<BadgeResponse[]>("/api/badges/all");
+}
+
+// ---------- Friends ----------
+
+export interface FriendshipResponse {
+  id: number;
+  user_id: string;
+  friend_id: string;
+  status: "pending" | "accepted" | "rejected";
+  created_at: string;
+  friend_username: string;
+  friend_display_name: string | null;
+  friend_avatar_url: string | null;
+}
+
+export async function getFriends(): Promise<FriendshipResponse[]> {
+  return apiFetch<FriendshipResponse[]>("/api/friends/");
+}
+
+export async function sendFriendRequest(friendUsername: string): Promise<FriendshipResponse> {
+  return apiFetch<FriendshipResponse>("/api/friends/request", {
+    method: "POST",
+    body: JSON.stringify({ friend_username: friendUsername }),
+  });
+}
+
+export async function acceptFriendRequest(friendshipId: number): Promise<FriendshipResponse> {
+  return apiFetch<FriendshipResponse>(`/api/friends/accept/${friendshipId}`, {
+    method: "POST",
+  });
+}
+
+export async function rejectFriendRequest(friendshipId: number): Promise<FriendshipResponse> {
+  return apiFetch<FriendshipResponse>(`/api/friends/reject/${friendshipId}`, {
+    method: "POST",
+  });
+}
+
+export async function sendArenaInvite(targetUserId: string, roomCode: string): Promise<void> {
+  return apiFetch<void>("/api/arena/invite", {
+    method: "POST",
+    body: JSON.stringify({ target_user_id: targetUserId, room_code: roomCode }),
+  });
+}
+
+export async function getArenaInvites(): Promise<{room_code: string, sender_id: string, sender_name: string}[]> {
+  return apiFetch<{room_code: string, sender_id: string, sender_name: string}[]>("/api/arena/invites");
 }

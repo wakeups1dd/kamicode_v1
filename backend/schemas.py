@@ -1,6 +1,18 @@
 from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
+from typing import Optional, List
+from datetime import datetime, date
+
+
+# ---------- Daily Challenge ----------
+class DailyChallengeResponse(BaseModel):
+    id: int
+    cohort_id: int
+    problem_id: int
+    date: date
+    problem_slug: str
+    problem_title: str
+
+    model_config = {"from_attributes": True}
 
 
 # ---------- Problem Schemas ----------
@@ -235,5 +247,45 @@ class UserBadgeResponse(BaseModel):
     user_id: str
     badge: BadgeResponse
     awarded_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+# ---------- Friendship Schemas ----------
+
+class FriendRequestCreate(BaseModel):
+    friend_username: str
+
+
+class FriendActionRequest(BaseModel):
+    friendship_id: int
+    action: str  # 'accept' or 'reject'
+
+
+class FriendshipResponse(BaseModel):
+    id: int
+    user_id: str
+    friend_id: str
+    status: str
+    friend_username: Optional[str] = None
+    friend_display_name: Optional[str] = None
+    friend_avatar_url: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+# ---------- Cohort Challenges Schemas ----------
+
+class DailyChallengeCreate(BaseModel):
+    problem_id: int
+
+
+class DailyChallengeResponse(BaseModel):
+    id: int
+    cohort_id: int
+    problem_id: int
+    date: datetime
+    problem_title: Optional[str] = None
+    problem_slug: Optional[str] = None
 
     model_config = {"from_attributes": True}
