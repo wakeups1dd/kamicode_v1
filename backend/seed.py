@@ -3,11 +3,12 @@ Seed script to populate the database with sample problems.
 Run with: python seed.py
 """
 
-from database import SessionLocal, engine, Base
-from models import Problem, Difficulty, Badge
+from enum import Enum
 
-# Ensure tables exist
-Base.metadata.create_all(bind=engine)
+class Difficulty(str, Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
 
 SEED_PROBLEMS = [
     # ───────────────── EASY ─────────────────
@@ -528,33 +529,54 @@ SEED_BADGES = [
 
 
 def seed():
-    db = SessionLocal()
-    try:
-        existing_count = db.query(Problem).count()
-        if existing_count == 0:
-            for data in SEED_PROBLEMS:
-                problem = Problem(**data)
-                db.add(problem)
-            db.commit()
-            print(f"Successfully seeded {len(SEED_PROBLEMS)} problems:")
-            for p in SEED_PROBLEMS:
-                diff_label = {"easy": "[EASY]  ", "medium": "[MEDIUM]", "hard": "[HARD]  "}.get(p["difficulty"].value, "[?]     ")
-                print(f"  {diff_label} {p['title']} [{p['topic']}]")
-        else:
-            print(f"Database already has {existing_count} problems. Skipping problem seed.")
+    from convex import ConvexClient
+    from config import settings
+    
+    client = ConvexClient(settings.convex_url)
+    
+    print("Seeding problems...")
+    for data in SEED_PROBLEMS:
+        try:
+            # Map difficulty enum to string
+            if hasattr(data['difficulty'], 'value'):
+                diff = data['difficulty'].value
+            else:
+                diff = data['difficulty']
+                
+            client.mutation("problems:create", {
+                "title": data["title"],
+                "slug": data["slug"],
+                "description": data["description"],
+                "difficulty": diff,
+                "topic": data["topic"],
+                "constraints": data["constraints"],
+                "examples": data["examples"],
+                "testCases": data["test_cases"],
+                "starterCode": data["starter_code"],
+                "timeLimitMs": data["time_limit_ms"],
+                "memoryLimitKb": data["memory_limit_kb"],
+            })
+            print(f"  [+] Created problem: {data['title']}")
+        except Exception as e:
+            if "already exists" in str(e):
+                print(f"  [-] Skipped (already exists): {data['title']}")
+            else:
+                print(f"  [!] Error creating {data['title']}: {e}")
 
-        existing_badge_count = db.query(Badge).count()
-        if existing_badge_count == 0:
-            for badge_data in SEED_BADGES:
-                badge = Badge(**badge_data)
-                db.add(badge)
-            db.commit()
-            print(f"Successfully seeded {len(SEED_BADGES)} badges.")
-        else:
-            print(f"Database already has {existing_badge_count} badges. Skipping badge seed.")
-    finally:
-        db.close()
-
+    print("Seeding badges...")
+    for data in SEED_BADGES:
+        try:
+            client.mutation("badges:createBadge", {
+                "name": data["name"],
+                "description": data["description"],
+                "iconName": data["icon_name"],
+                "conditionType": data["condition_type"],
+                "conditionValue": data["condition_value"],
+            })
+            print(f"  [+] Created badge: {data['name']}")
+        except Exception as e:
+            print(f"  [!] Error creating {data['name']}: {e}")
 
 if __name__ == "__main__":
     seed()
+

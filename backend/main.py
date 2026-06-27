@@ -7,18 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from config import settings
-from database import engine, Base
-from models import Problem, Submission, User, AIAnalysis, Badge, UserBadge, UserStat  # noqa: F401 — ensures tables are registered
 from routers import problems, submissions, analysis, cohorts, leaderboard, streaks, arena, badges, friends
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    # Create all database tables on startup
-    Base.metadata.create_all(bind=engine)
-    print(f"[*] KamiCode API starting...")
-    print(f"    Database: {settings.database_url}")
+    print(f"[*] KamiCode API starting (100% Serverless DB via Convex)...")
     print(f"    Convex URL: {settings.convex_url}")
     print(f"    Code Runner: {settings.code_runner_mode}")
     print(f"    AI Analysis: {'enabled' if settings.openai_api_key else 'disabled (no OPENAI_API_KEY)'}")

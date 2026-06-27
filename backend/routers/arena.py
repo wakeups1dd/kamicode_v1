@@ -1,11 +1,9 @@
 import uuid
 import json
+import random
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import func
 
-from database import get_db
-from models import User, Problem
+from database import get_convex
 from auth import get_current_user
 from arena_state import arena_manager
 from pydantic import BaseModel
@@ -17,36 +15,48 @@ class ArenaInvite(BaseModel):
     room_code: str
 
 @router.post("/invite")
-def send_arena_invite(payload: ArenaInvite, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def send_arena_invite(payload: ArenaInvite, client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
     target = payload.target_user_id
     if target not in arena_manager.match_invites:
         arena_manager.match_invites[target] = []
     
     # Remove old invites from same sender
-    arena_manager.match_invites[target] = [inv for inv in arena_manager.match_invites[target] if inv["sender_id"] != current_user.id]
+    user_id = current_user["id"]
+    arena_manager.match_invites[target] = [inv for inv in arena_manager.match_invites[target] if inv["sender_id"] != user_id]
     
+    # Fetch user display name from Convex
+    sender = client.query("users:getByUserId", {"userId": user_id})
+    sender_name = sender.get("displayName") or sender.get("username") if sender else f"User_{user_id[:4]}"
+
     arena_manager.match_invites[target].append({
         "room_code": payload.room_code,
-        "sender_id": current_user.id,
-        "sender_name": current_user.display_name or current_user.username
+        "sender_id": user_id,
+        "sender_name": sender_name
     })
     return {"status": "ok"}
 
 @router.get("/invites")
-def get_arena_invites(current_user: User = Depends(get_current_user)):
-    invites = arena_manager.match_invites.get(current_user.id, [])
+def get_arena_invites(current_user: dict = Depends(get_current_user)):
+    user_id = current_user["id"]
+    invites = arena_manager.match_invites.get(user_id, [])
     # Clear them once fetched so they don't pop up forever
-    if current_user.id in arena_manager.match_invites:
-        arena_manager.match_invites[current_user.id] = []
+    if user_id in arena_manager.match_invites:
+        arena_manager.match_invites[user_id] = []
     return invites
 
 @router.websocket("/ws/{user_id}")
-async def arena_websocket(websocket: WebSocket, user_id: str, room_code: str = None, db: Session = Depends(get_db)):
+async def arena_websocket(websocket: WebSocket, user_id: str, room_code: str = None):
+    # For websockets, we need to manually instantiate client or rely on a global since Depends doesn't work well directly in all websocket scenarios without careful setup.
+    # We will instantiate ConvexClient manually here to avoid lifecycle issues in long-lived WS connections.
+    from config import settings
+    from convex import ConvexClient
+    client = ConvexClient(settings.convex_url)
+
     await arena_manager.connect(websocket)
     
-    # Try to fetch user, fallback to simple ID
-    user = db.query(User).filter(User.id == user_id).first()
-    username = user.username if user else f"User_{user_id[:4]}"
+    # Try to fetch user
+    user = client.query("users:getByUserId", {"userId": user_id})
+    username = user["username"] if user else f"User_{user_id[:4]}"
 
     try:
         # Check if user is reconnecting to an active match
@@ -68,12 +78,13 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: str = N
             async def create_match(opponent_id: str, opp_username: str, opp_ws: WebSocket):
                 match_id = str(uuid.uuid4())
                 
-                # Pick a random problem from the database
-                problem = db.query(Problem).order_by(func.random()).first()
-                # Fallback if DB is empty
-                problem_id = problem.id if problem else 1
-                problem_slug = problem.slug if problem else "two-sum"
-                problem_title = problem.title if problem else "Two Sum"
+                # Pick a random problem from Convex
+                problems = client.query("problems:list", {})
+                problem = random.choice(problems) if problems else None
+                
+                problem_id = problem["_id"] if problem else "1"
+                problem_slug = problem["slug"] if problem else "two-sum"
+                problem_title = problem["title"] if problem else "Two Sum"
                 
                 match_data = {
                     "match_id": match_id,
@@ -104,6 +115,14 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: str = N
                         {"user_id": opponent_id, "username": opp_username}
                     ]
                 })
+
+                # Log matches played to stats (best effort)
+                try:
+                    client.mutation("streaks:updateStats", {"userId": user_id, "matchPlayed": True, "matchWon": False})
+                    client.mutation("streaks:updateStats", {"userId": opponent_id, "matchPlayed": True, "matchWon": False})
+                except Exception as e:
+                    print("Stats update failed:", e)
+
 
             if room_code:
                 if room_code in arena_manager.private_rooms:
@@ -167,6 +186,10 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: str = N
                             "winner_id": user_id,
                             "reason": "solved"
                         })
+                        try:
+                            client.mutation("streaks:updateStats", {"userId": user_id, "matchPlayed": False, "matchWon": True})
+                        except Exception:
+                            pass
                 elif msg_type == "leave":
                     # Find opponent id
                     opponent_id = None

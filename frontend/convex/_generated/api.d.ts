@@ -8,8 +8,14 @@
  * @module
  */
 
+import type * as analysis from "../analysis.js";
+import type * as badges from "../badges.js";
+import type * as cohorts from "../cohorts.js";
+import type * as friends from "../friends.js";
 import type * as problems from "../problems.js";
+import type * as streaks from "../streaks.js";
 import type * as submissions from "../submissions.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -18,8 +24,14 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analysis: typeof analysis;
+  badges: typeof badges;
+  cohorts: typeof cohorts;
+  friends: typeof friends;
   problems: typeof problems;
+  streaks: typeof streaks;
   submissions: typeof submissions;
+  users: typeof users;
 }>;
 
 /**

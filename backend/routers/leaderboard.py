@@ -1,107 +1,55 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from typing import List
 
-from database import get_db
-from models import UserStreak, User, Cohort, CohortMember
+from database import get_convex
 from schemas import LeaderboardEntry
 from auth import get_current_user
 
 router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
 
-
-@router.get("/global", response_model=List[LeaderboardEntry])
-def get_global_leaderboard(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+@router.get("/global")
+def get_global_leaderboard(client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
     """Get global leaderboard rankings based on total problems solved."""
-    results = (
-        db.query(
-            UserStreak.user_id,
-            UserStreak.total_solves,
-            UserStreak.current_streak,
-            UserStreak.longest_streak,
-            User.username,
-            User.display_name,
-            User.avatar_url
-        )
-        .join(User, UserStreak.user_id == User.id)
-        .order_by(UserStreak.total_solves.desc(), UserStreak.current_streak.desc())
-        .limit(100)
-        .all()
-    )
-
+    results = client.query("streaks:getGlobalLeaderboard", {})
+    
     leaderboard = []
     for rank, r in enumerate(results, 1):
-        leaderboard.append(
-            LeaderboardEntry(
-                rank=rank,
-                user_id=r.user_id,
-                username=r.username,
-                display_name=r.display_name,
-                avatar_url=r.avatar_url,
-                total_solves=r.total_solves,
-                current_streak=r.current_streak,
-                longest_streak=r.longest_streak
-            )
-        )
+        leaderboard.append({
+            "rank": rank,
+            "user_id": r.get("userId"),
+            "username": r.get("username"),
+            "display_name": r.get("displayName"),
+            "avatar_url": r.get("avatarUrl"),
+            "total_solves": r.get("totalSolves", 0),
+            "current_streak": r.get("currentStreak", 0),
+            "longest_streak": r.get("longestStreak", 0)
+        })
     return leaderboard
 
-
-@router.get("/cohort/{cohort_id}", response_model=List[LeaderboardEntry])
-def get_cohort_leaderboard(
-    cohort_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+@router.get("/cohort/{slug}")
+def get_cohort_leaderboard(slug: str, client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
     """Get cohort-specific leaderboard rankings."""
-    # Check if cohort exists
-    cohort = db.query(Cohort).filter(Cohort.id == cohort_id).first()
+    cohort = client.query("cohorts:getBySlug", {"slug": slug})
     if not cohort:
         raise HTTPException(status_code=404, detail="Cohort not found")
-
-    # Check if user is member
-    is_member = db.query(CohortMember).filter(
-        CohortMember.cohort_id == cohort_id,
-        CohortMember.user_id == current_user.id
-    ).first()
+        
+    members = client.query("cohorts:getMembers", {"cohortId": cohort.get("_id")})
+    is_member = any(m.get("userId") == current_user["id"] for m in members)
     if not is_member:
         raise HTTPException(status_code=403, detail="You are not a member of this cohort")
 
-    # Fetch cohort members' streak details
-    results = (
-        db.query(
-            CohortMember.user_id,
-            User.username,
-            User.display_name,
-            User.avatar_url,
-            UserStreak.total_solves,
-            UserStreak.current_streak,
-            UserStreak.longest_streak
-        )
-        .join(User, CohortMember.user_id == User.id)
-        .outerjoin(UserStreak, CohortMember.user_id == UserStreak.user_id)
-        .filter(CohortMember.cohort_id == cohort_id)
-        .order_by(
-            UserStreak.total_solves.desc().nullslast(),
-            UserStreak.current_streak.desc().nullslast()
-        )
-        .all()
-    )
+    results = client.query("streaks:getCohortLeaderboard", {"cohortId": cohort.get("_id")})
 
     leaderboard = []
     for rank, r in enumerate(results, 1):
-        leaderboard.append(
-            LeaderboardEntry(
-                rank=rank,
-                user_id=r.user_id,
-                username=r.username,
-                display_name=r.display_name,
-                avatar_url=r.avatar_url,
-                total_solves=r.total_solves or 0,
-                current_streak=r.current_streak or 0,
-                longest_streak=r.longest_streak or 0
-            )
-        )
+        leaderboard.append({
+            "rank": rank,
+            "user_id": r.get("userId"),
+            "username": r.get("username"),
+            "display_name": r.get("displayName"),
+            "avatar_url": r.get("avatarUrl"),
+            "total_solves": r.get("totalSolves", 0),
+            "current_streak": r.get("currentStreak", 0),
+            "longest_streak": r.get("longestStreak", 0)
+        })
     return leaderboard

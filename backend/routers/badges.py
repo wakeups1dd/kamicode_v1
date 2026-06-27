@@ -1,68 +1,57 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
 from typing import List
-from datetime import datetime
 
-from database import get_db
-from models import User, Badge, UserBadge, UserStat, UserStreak
-from schemas import BadgeResponse, UserBadgeResponse
+from database import get_convex
 from auth import get_current_user
 
 router = APIRouter(prefix="/api/badges", tags=["badges"])
 
-@router.get("/me", response_model=List[UserBadgeResponse])
-def get_my_badges(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.get("/me")
+def get_my_badges(client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
     """Get the current user's unlocked badges."""
-    user_badges = db.query(UserBadge).filter(UserBadge.user_id == current_user.id).all()
-    return user_badges
+    return client.query("badges:listForUser", {"userId": current_user["id"]})
 
-@router.get("/all", response_model=List[BadgeResponse])
-def get_all_badges(db: Session = Depends(get_db)):
+@router.get("/all")
+def get_all_badges(client = Depends(get_convex)):
     """Get all available badges."""
-    return db.query(Badge).all()
+    return client.query("badges:list", {})
 
-def evaluate_badges(user_id: str, db: Session) -> List[Badge]:
+def evaluate_badges(user_id: str, client):
     """
     Evaluates if the user unlocked any new badges.
-    Should be called after a submission or an arena match.
-    Returns a list of newly unlocked Badge objects.
+    This logic should ideally be a Convex mutation or action.
     """
     # Fetch user's current stats
-    streak = db.query(UserStreak).filter(UserStreak.user_id == user_id).first()
-    stats = db.query(UserStat).filter(UserStat.user_id == user_id).first()
+    streak = client.query("streaks:getByUserId", {"userId": user_id})
+    stats = client.query("streaks:getStats", {"userId": user_id})
     
-    total_solves = streak.total_solves if streak else 0
-    current_streak = streak.current_streak if streak else 0
-    arena_wins = stats.arena_wins if stats else 0
+    total_solves = streak.get("totalSolves", 0) if streak else 0
+    current_streak = streak.get("currentStreak", 0) if streak else 0
+    arena_wins = stats.get("arenaWins", 0) if stats else 0
 
-    # Fetch all badges
-    all_badges = db.query(Badge).all()
-    
-    # Fetch already unlocked badges
-    unlocked_badge_ids = {
-        ub.badge_id for ub in db.query(UserBadge).filter(UserBadge.user_id == user_id).all()
-    }
+    all_badges = client.query("badges:list", {})
+    user_badges = client.query("badges:listForUser", {"userId": user_id})
+    unlocked_badge_ids = {b.get("_id") for b in user_badges}
     
     newly_unlocked = []
     
     for badge in all_badges:
-        if badge.id in unlocked_badge_ids:
+        if badge.get("_id") in unlocked_badge_ids:
             continue
             
         unlocked = False
-        if badge.condition_type == "total_solves" and total_solves >= badge.condition_value:
+        cond_type = badge.get("conditionType")
+        cond_val = badge.get("conditionValue", 0)
+
+        if cond_type == "total_solves" and total_solves >= cond_val:
             unlocked = True
-        elif badge.condition_type == "streak" and current_streak >= badge.condition_value:
+        elif cond_type == "streak" and current_streak >= cond_val:
             unlocked = True
-        elif badge.condition_type == "arena_wins" and arena_wins >= badge.condition_value:
+        elif cond_type == "arena_wins" and arena_wins >= cond_val:
             unlocked = True
             
         if unlocked:
-            new_ub = UserBadge(user_id=user_id, badge_id=badge.id)
-            db.add(new_ub)
+            client.mutation("badges:award", {"userId": user_id, "badgeId": badge.get("_id")})
             newly_unlocked.append(badge)
             
-    if newly_unlocked:
-        db.commit()
-        
     return newly_unlocked
