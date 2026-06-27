@@ -9,3 +9,6 @@ python-dotenv
 psycopg2-binary
 python-jose[cryptography]
 passlib[bcrypt]
+convex
+clerk-backend-api
+PyJWT

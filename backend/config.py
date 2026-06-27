@@ -11,11 +11,14 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite:///./kamicode.db"
 
-    # Supabase Auth (Phase 1)
-    supabase_url: str = ""
-    supabase_anon_key: str = ""
-    supabase_jwt_secret: str = ""
+    # Clerk Auth
+    clerk_secret_key: str = ""
+    clerk_publishable_key: str = ""
+    clerk_jwks_url: str = ""
     bypass_auth: bool = False
+
+    # Convex DB
+    convex_url: str = ""
 
     # AI Analysis
     openai_api_key: str = ""
@@ -40,7 +43,7 @@ class Settings(BaseSettings):
     cors_origins: str = "*"  # comma-separated origins for production
     debug: bool = True
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 settings = Settings()

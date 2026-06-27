@@ -18,7 +18,8 @@ async def lifespan(app: FastAPI):
     # Create all database tables on startup
     Base.metadata.create_all(bind=engine)
     print(f"[*] KamiCode API starting...")
-    print(f"    Database: {settings.database_url.split('@')[-1] if '@' in settings.database_url else settings.database_url}")
+    print(f"    Database: {settings.database_url}")
+    print(f"    Convex URL: {settings.convex_url}")
     print(f"    Code Runner: {settings.code_runner_mode}")
     print(f"    AI Analysis: {'enabled' if settings.openai_api_key else 'disabled (no OPENAI_API_KEY)'}")
     yield

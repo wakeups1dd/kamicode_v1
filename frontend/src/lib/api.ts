@@ -10,7 +10,6 @@ import type {
   BadgeResponse,
   UserBadgeResponse,
 } from "./types";
-import { supabase } from "./supabase";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -38,10 +37,11 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     token = getMockToken();
   } else {
     try {
-      const { data } = await supabase.auth.getSession();
-      token = data.session?.access_token;
+      if (typeof window !== "undefined" && (window as any).Clerk?.session) {
+        token = await (window as any).Clerk.session.getToken();
+      }
     } catch (err) {
-      // If Supabase is disabled/unconfigured, ignore session retrieval
+      console.warn("Clerk token retrieval failed", err);
     }
   }
 
@@ -76,11 +76,13 @@ export async function getCurrentUser() {
     return { id: "dev-user-id" };
   }
   try {
-    const { data } = await supabase.auth.getSession();
-    return data.session?.user || null;
+    if (typeof window !== "undefined" && (window as any).Clerk?.user) {
+      return (window as any).Clerk.user;
+    }
   } catch (err) {
     return null;
   }
+  return null;
 }
 
 // ---------- Problems ----------

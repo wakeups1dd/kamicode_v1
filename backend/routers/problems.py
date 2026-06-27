@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from typing import Optional
 
-from database import get_db
-from models import Problem
+from database import get_convex
 from schemas import ProblemCreate, ProblemSummary, ProblemDetail
+from convex import ConvexClient
 
 router = APIRouter(prefix="/api/problems", tags=["problems"])
 
@@ -13,47 +12,54 @@ router = APIRouter(prefix="/api/problems", tags=["problems"])
 def list_problems(
     difficulty: Optional[str] = None,
     topic: Optional[str] = None,
-    db: Session = Depends(get_db),
+    client: ConvexClient = Depends(get_convex),
 ):
     """List all problems, optionally filtered by difficulty or topic."""
-    query = db.query(Problem)
+    args = {}
     if difficulty:
-        query = query.filter(Problem.difficulty == difficulty)
+        args["difficulty"] = difficulty
     if topic:
-        query = query.filter(Problem.topic == topic)
-    return query.order_by(Problem.id).all()
+        args["topic"] = topic
+    problems = client.query("problems:list", args)
+    
+    # Map _id back to id to match legacy schemas
+    for p in problems:
+        p["id"] = p["_id"]
+        
+    return problems
 
 
 @router.get("/{slug}", response_model=ProblemDetail)
-def get_problem(slug: str, db: Session = Depends(get_db)):
+def get_problem(slug: str, client: ConvexClient = Depends(get_convex)):
     """Get a single problem by slug. Test cases are hidden from the response."""
-    problem = db.query(Problem).filter(Problem.slug == slug).first()
+    problem = client.query("problems:getBySlug", {"slug": slug})
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
+        
+    problem["id"] = problem["_id"]
     return problem
 
 
 @router.post("/", response_model=ProblemSummary, status_code=201)
-def create_problem(problem: ProblemCreate, db: Session = Depends(get_db)):
-    """Create a new problem (admin endpoint — will be protected with auth later)."""
-    existing = db.query(Problem).filter(Problem.slug == problem.slug).first()
-    if existing:
-        raise HTTPException(status_code=409, detail="A problem with this slug already exists")
-
-    db_problem = Problem(
-        title=problem.title,
-        slug=problem.slug,
-        description=problem.description,
-        difficulty=problem.difficulty,
-        topic=problem.topic,
-        constraints=problem.constraints,
-        examples=[ex.model_dump() for ex in problem.examples] if problem.examples else None,
-        test_cases=[tc.model_dump() for tc in problem.test_cases],
-        starter_code=problem.starter_code,
-        time_limit_ms=problem.time_limit_ms,
-        memory_limit_kb=problem.memory_limit_kb,
-    )
-    db.add(db_problem)
-    db.commit()
-    db.refresh(db_problem)
-    return db_problem
+def create_problem(problem: ProblemCreate, client: ConvexClient = Depends(get_convex)):
+    """Create a new problem."""
+    try:
+        db_problem = client.mutation("problems:create", {
+            "title": problem.title,
+            "slug": problem.slug,
+            "description": problem.description,
+            "difficulty": problem.difficulty,
+            "topic": problem.topic,
+            "constraints": problem.constraints,
+            "examples": [ex.model_dump() for ex in problem.examples] if problem.examples else None,
+            "testCases": [tc.model_dump() for tc in problem.test_cases],
+            "starterCode": problem.starter_code,
+            "timeLimitMs": problem.time_limit_ms,
+            "memoryLimitKb": problem.memory_limit_kb,
+        })
+        db_problem["id"] = db_problem["_id"]
+        return db_problem
+    except Exception as e:
+        if "already exists" in str(e):
+            raise HTTPException(status_code=409, detail="A problem with this slug already exists")
+        raise HTTPException(status_code=500, detail=str(e))

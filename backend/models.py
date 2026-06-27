@@ -58,7 +58,7 @@ class Submission(Base):
     __tablename__ = "submissions"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    problem_id = Column(Integer, nullable=False, index=True)
+    problem_id = Column(String(100), nullable=False, index=True)
     user_id = Column(String(36), nullable=True, index=True)  # Supabase User UUID
     language = Column(String(50), nullable=False, default="python")
     source_code = Column(Text, nullable=False)
@@ -81,8 +81,8 @@ class AIAnalysis(Base):
     __tablename__ = "ai_analyses"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    submission_id = Column(Integer, ForeignKey("submissions.id"), unique=True, nullable=False, index=True)
-    problem_id = Column(Integer, nullable=False, index=True)
+    submission_id = Column(String(100), unique=True, nullable=False, index=True)
+    problem_id = Column(String(100), nullable=False, index=True)
 
     time_complexity = Column(String(50), nullable=True)
     space_complexity = Column(String(50), nullable=True)
@@ -144,7 +144,7 @@ class DailyChallenge(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     cohort_id = Column(Integer, ForeignKey("cohorts.id", ondelete="CASCADE"))
-    problem_id = Column(Integer, ForeignKey("problems.id", ondelete="CASCADE"))
+    problem_id = Column(String(100), nullable=False)
     date = Column(Date, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

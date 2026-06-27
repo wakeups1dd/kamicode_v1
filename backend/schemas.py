@@ -47,7 +47,7 @@ class ProblemCreate(ProblemBase):
 
 
 class ProblemSummary(BaseModel):
-    id: int
+    id: str
     title: str
     slug: str
     difficulty: str
@@ -57,7 +57,7 @@ class ProblemSummary(BaseModel):
 
 
 class ProblemDetail(BaseModel):
-    id: int
+    id: str
     title: str
     slug: str
     description: str
@@ -76,7 +76,7 @@ class ProblemDetail(BaseModel):
 # ---------- Submission Schemas ----------
 
 class SubmissionCreate(BaseModel):
-    problem_id: int
+    problem_id: str
     language: str = "python"
     source_code: str
 
@@ -90,8 +90,8 @@ class TestResultItem(BaseModel):
 
 
 class SubmissionResponse(BaseModel):
-    id: int
-    problem_id: int
+    id: str
+    problem_id: str
     language: str
     status: str
     runtime_ms: Optional[float] = None
