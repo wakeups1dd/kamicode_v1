@@ -120,8 +120,8 @@ export default function LeaderboardPage() {
   };
 
   // Fetch leaderboard when cohort selector changes
-  const handleCohortChange = async (cohortId: number) => {
-    const cohort = cohorts.find(c => c.id === cohortId) || null;
+  const handleCohortChange = async (cohortId: string | number) => {
+    const cohort = cohorts.find(c => String(c.id) === String(cohortId)) || null;
     setSelectedCohort(cohort);
     if (!isGlobal && cohort) {
       setLoading(true);

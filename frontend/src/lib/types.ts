@@ -1,7 +1,7 @@
 // API types matching the backend schemas
 
 export interface ProblemSummary {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   difficulty: string;
@@ -15,18 +15,19 @@ export interface ExampleCase {
 }
 
 export interface ProblemDetail {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   description: string;
   difficulty: string;
   topic: string;
-  constraints?: string;
+  constraints?: string | string[];
   examples?: ExampleCase[];
+  test_cases?: Array<{ input: string; expected_output: string; is_hidden?: boolean }>;
   starter_code?: string;
-  time_limit_ms: number;
-  memory_limit_kb: number;
-  created_at?: string;
+  time_limit_ms?: number;
+  memory_limit_kb?: number;
+  created_at?: string | number;
 }
 
 export interface TestResultItem {
@@ -35,11 +36,12 @@ export interface TestResultItem {
   expected: string;
   actual?: string;
   error?: string;
+  is_hidden?: boolean;
 }
 
 export interface SubmissionResponse {
-  id: number;
-  problem_id: number;
+  id: string;
+  problem_id: string;
   language: string;
   status: string;
   runtime_ms?: number;
@@ -49,13 +51,13 @@ export interface SubmissionResponse {
   total_count: number;
   stdout?: string;
   stderr?: string;
-  created_at?: string;
+  created_at?: string | number;
 }
 
 export interface AIAnalysisResponse {
-  id: number;
-  submission_id: number;
-  problem_id: number;
+  id: string;
+  submission_id: string;
+  problem_id: string;
   time_complexity?: string;
   space_complexity?: string;
   approach?: string;
@@ -66,17 +68,17 @@ export interface AIAnalysisResponse {
   strengths?: string[];
   improvements?: string[];
   optimized_solution_hint?: string;
-  created_at?: string;
+  created_at?: string | number;
 }
 
 export interface CohortResponse {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   description?: string;
   invite_code: string;
   created_by: string;
-  created_at: string;
+  created_at?: string | number;
 }
 
 export interface CohortMemberResponse {
@@ -85,7 +87,7 @@ export interface CohortMemberResponse {
   display_name?: string;
   avatar_url?: string;
   role: string;
-  joined_at: string;
+  joined_at?: string | number;
 }
 
 export interface CohortDetailResponse extends CohortResponse {
@@ -112,19 +114,18 @@ export interface LeaderboardEntry {
 }
 
 export interface BadgeResponse {
-  id: number;
+  id: string;
   name: string;
   description: string;
   icon_name: string;
   condition_type: string;
   condition_value: number;
-  created_at?: string;
+  created_at?: string | number;
 }
 
 export interface UserBadgeResponse {
-  id: number;
+  id: string;
   user_id: string;
   badge: BadgeResponse;
-  awarded_at?: string;
+  awarded_at?: string | number;
 }
-

@@ -35,6 +35,7 @@ export default defineSchema({
     displayName: v.optional(v.string()),
     email: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
+    eloRating: v.optional(v.number()),
   }).index("by_userId", ["userId"]).index("by_username", ["username"]),
 
   userStreaks: defineTable({
@@ -49,7 +50,24 @@ export default defineSchema({
     userId: v.string(),
     arenaMatches: v.number(),
     arenaWins: v.number(),
+    eloRating: v.optional(v.number()),
   }).index("by_userId", ["userId"]),
+
+  matches: defineTable({
+    matchId: v.string(),
+    player1Id: v.string(),
+    player2Id: v.string(),
+    winnerId: v.optional(v.string()),
+    problemId: v.string(),
+    status: v.string(), // "in_progress", "finished", "forfeit", "abandoned"
+    durationSeconds: v.optional(v.number()),
+    p1EloBefore: v.optional(v.number()),
+    p1EloAfter: v.optional(v.number()),
+    p2EloBefore: v.optional(v.number()),
+    p2EloAfter: v.optional(v.number()),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+  }).index("by_matchId", ["matchId"]).index("by_player1", ["player1Id"]).index("by_player2", ["player2Id"]),
 
   aiAnalyses: defineTable({
     submissionId: v.string(),

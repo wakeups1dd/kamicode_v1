@@ -162,7 +162,7 @@ export default function CohortsPage() {
                           <span>View League Hub</span>
                         </span>
                         <span className="font-mono text-[9px]">
-                          Joined {new Date(cohort.created_at).toLocaleDateString()}
+                          Joined {cohort.created_at ? new Date(cohort.created_at).toLocaleDateString() : "Recently"}
                         </span>
                       </div>
                     </div>

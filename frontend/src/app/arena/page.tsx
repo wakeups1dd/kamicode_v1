@@ -204,7 +204,7 @@ export default function ArenaLobby() {
         {status === "idle" && mode === "friend" && (
           <div className="w-full space-y-4">
             <button
-              onClick={handleCreateFriendMatch}
+              onClick={() => handleCreateFriendMatch()}
               className="w-full bg-main text-main-foreground py-4 text-sm font-black uppercase tracking-widest border-2 border-black shadow-[3px_3px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2"
             >
               <UserPlus className="w-5 h-5" />

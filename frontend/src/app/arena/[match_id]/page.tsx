@@ -49,10 +49,12 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
   // Arena State
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
-  const [opponentStatus, setOpponentStatus] = useState<"Waiting" | "Coding..." | "Evaluating tests..." | "Finished!">("Waiting");
+  const [opponentStatus, setOpponentStatus] = useState<"Waiting" | "Coding..." | "Evaluating tests..." | "Finished!" | "Disconnected">("Waiting");
   const [opponentPassed, setOpponentPassed] = useState(0);
   const [opponentTotal, setOpponentTotal] = useState(0);
   const [matchResult, setMatchResult] = useState<"won" | "lost" | "draw" | null>(null);
+  const [eloDelta, setEloDelta] = useState<number | null>(null);
+  const [disconnectWarning, setDisconnectWarning] = useState<string | null>(null);
 
   // Terminal & AI State
   const [isRunning, setIsRunning] = useState(false);
@@ -67,6 +69,7 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
 
   useEffect(() => {
     let socket: WebSocket;
+    let pingInterval: NodeJS.Timeout;
 
     const initArena = async () => {
       try {
@@ -81,12 +84,20 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
         socket = new WebSocket(wsUrl);
         setWs(socket);
 
-        socket.onopen = () => setConnectionStatus("connected");
+        socket.onopen = () => {
+          setConnectionStatus("connected");
+          // Start 10s ping heartbeat
+          pingInterval = setInterval(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: "ping" }));
+            }
+          }, 10000);
+        };
         
         socket.onmessage = async (event) => {
           const data = JSON.parse(event.data);
           
-          if (data.type === "reconnected" || data.type === "match_found") {
+          if (data.type === "reconnected" || data.type === "match_found" || data.type === "match_start") {
             const probSlug = data.problem_slug;
             if (probSlug) {
               const p = await getProblem(probSlug);
@@ -107,17 +118,44 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
                setOpponentStatus("Coding...");
             }
           }
+          else if (data.type === "player_disconnected") {
+            setOpponentStatus("Disconnected");
+            setDisconnectWarning(`Opponent disconnected. 30s reconnect window active.`);
+          }
+          else if (data.type === "player_reconnected") {
+            setOpponentStatus("Coding...");
+            setDisconnectWarning(null);
+          }
+          else if (data.type === "anticheat_warning") {
+            setDisconnectWarning(`Opponent triggered anti-cheat telemetry: ${data.event.replace('_', ' ')}.`);
+            setTimeout(() => setDisconnectWarning(null), 5000);
+          }
           else if (data.type === "match_ended") {
             if (data.winner_id === uId) {
               setMatchResult("won");
             } else {
               setMatchResult("lost");
             }
+            if (data.elo && data.elo[uId]) {
+              setEloDelta(data.elo[uId].delta);
+            }
+            setDisconnectWarning(null);
             socket.close();
           }
         };
 
-        socket.onclose = () => setConnectionStatus("disconnected");
+        const handleVisibilityChange = () => {
+          if (document.hidden && socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: "anticheat_event", event: "tab_switch" }));
+          }
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        socket.onclose = () => {
+          setConnectionStatus("disconnected");
+          clearInterval(pingInterval);
+          document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
       } catch (err) {
         console.error(err);
       }
@@ -126,12 +164,24 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
     initArena();
 
     return () => {
+      clearInterval(pingInterval);
       if (socket) socket.close();
     };
   }, [matchId]);
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
+      const prevLen = sourceCode.length;
+      const newLen = value.length;
+      // Detect large paste (>100 characters in a single stroke)
+      if (newLen - prevLen > 100 && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "anticheat_event",
+          event: "large_paste",
+          details: `Pasted ${newLen - prevLen} chars`,
+        }));
+      }
+
       setSourceCode(value);
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "typing" }));
@@ -139,7 +189,7 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
     }
   };
 
-  const pollAIAnalysis = async (submissionId: number) => {
+  const pollAIAnalysis = async (submissionId: string | number) => {
     setIsAnalyzing(true);
     setAiAnalysis(null);
     const maxRetries = 20;
@@ -188,7 +238,7 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
       for (let i = 0; i < 15; i++) {
         if (finalResult.status !== "pending" && finalResult.status !== "running") break;
         await new Promise(r => setTimeout(r, 1000));
-        const check = await fetch(`http://localhost:8000/api/submissions/${result.id}`).then(r => r.json());
+        const check = await fetch(`${apiBase}/api/submissions/${result.id}`).then(r => r.json());
         finalResult = check;
       }
 
@@ -267,6 +317,12 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
         </div>
       </div>
 
+      {disconnectWarning && (
+        <div className="bg-[#ffbf00] text-black border-b-2 border-black px-4 py-1.5 text-xs font-bold text-center">
+          ⚠️ {disconnectWarning}
+        </div>
+      )}
+
       {/* Main Split Interface */}
       <div className="flex-1 flex overflow-hidden">
         
@@ -281,9 +337,16 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
                 <h2 className="text-3xl font-black uppercase tracking-tight mb-2">
                   {matchResult === 'won' ? 'VICTORY' : 'DEFEAT'}
                 </h2>
-                <p className="text-xs font-bold text-muted-foreground mb-6">
+                <p className="text-xs font-bold text-muted-foreground mb-4">
                   {matchResult === 'won' ? 'You crushed your opponent!' : 'Your opponent solved it first.'}
                 </p>
+                {eloDelta !== null && (
+                  <div className={`text-sm font-black font-mono px-3 py-1 rounded-full border-2 border-black mb-6 ${
+                    eloDelta >= 0 ? 'bg-[#8bd600] text-black' : 'bg-[#f85149] text-white'
+                  }`}>
+                    {eloDelta >= 0 ? `+${eloDelta}` : eloDelta} Elo Rating
+                  </div>
+                )}
                 <button
                   onClick={leaveArena}
                   className="bg-main text-main-foreground w-full py-3 text-sm font-black uppercase border-2 border-black shadow-[3px_3px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"

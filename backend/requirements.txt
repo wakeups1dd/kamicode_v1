@@ -12,3 +12,4 @@ passlib[bcrypt]
 convex
 clerk-backend-api
 PyJWT
+slowapi

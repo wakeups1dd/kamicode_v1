@@ -41,11 +41,11 @@ export function BadgeToaster() {
     return () => clearInterval(interval);
   }, []);
 
-  const removeToast = (id: number) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
+  const removeToast = (id: string | number) => {
+    setToasts(prev => prev.filter(t => String(t.id) !== String(id)));
   };
 
-  const handleAwesomeClick = (id: number) => {
+  const handleAwesomeClick = (id: string | number) => {
     removeToast(id);
     router.push("/profile");
   };

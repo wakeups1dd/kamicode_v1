@@ -78,8 +78,8 @@ export default function ProblemsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [solvedProblemIds, setSolvedProblemIds] = useState<Set<number>>(new Set());
-  const [attemptedProblemIds, setAttemptedProblemIds] = useState<Set<number>>(new Set());
+  const [solvedProblemIds, setSolvedProblemIds] = useState<Set<string>>(new Set());
+  const [attemptedProblemIds, setAttemptedProblemIds] = useState<Set<string>>(new Set());
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,13 +95,13 @@ export default function ProblemsPage() {
       .then(([problemsData, submissionsData]) => {
         setProblems(problemsData);
         
-        const solved = new Set<number>();
-        const attempted = new Set<number>();
+        const solved = new Set<string>();
+        const attempted = new Set<string>();
         
         submissionsData.forEach((sub) => {
-          attempted.add(sub.problem_id);
+          attempted.add(String(sub.problem_id));
           if (sub.status === "accepted") {
-            solved.add(sub.problem_id);
+            solved.add(String(sub.problem_id));
           }
         });
         

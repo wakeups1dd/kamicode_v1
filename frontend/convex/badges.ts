@@ -44,6 +44,24 @@ export const award = mutation({
   },
 });
 
+export const createBadge = mutation({
+  args: {
+    name: v.string(),
+    description: v.string(),
+    iconName: v.string(),
+    conditionType: v.string(),
+    conditionValue: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("badges")
+      .filter((q) => q.eq(q.field("name"), args.name))
+      .first();
+    if (existing) return existing._id;
+    return await ctx.db.insert("badges", args);
+  },
+});
+
 export const seed = mutation({
   handler: async (ctx) => {
     const existing = await ctx.db.query("badges").first();
@@ -60,3 +78,4 @@ export const seed = mutation({
     }
   },
 });
+

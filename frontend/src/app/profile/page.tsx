@@ -11,7 +11,7 @@ import { User, Zap, Code, ShieldAlert, Award, Calendar, ExternalLink, Activity, 
 export default function ProfilePage() {
   const { user } = useAuth();
   const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
-  const [problemMap, setProblemMap] = useState<Record<number, ProblemSummary>>({});
+  const [problemMap, setProblemMap] = useState<Record<string, ProblemSummary>>({});
   const [streak, setStreak] = useState<UserStreakResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +30,9 @@ export default function ProfilePage() {
         setSubmissions(subsData);
         setStreak(streakData);
 
-        const pMap: Record<number, ProblemSummary> = {};
+        const pMap: Record<string, ProblemSummary> = {};
         problemsData.forEach((p) => {
-          pMap[p.id] = p;
+          pMap[String(p.id)] = p;
         });
         setProblemMap(pMap);
       } catch (err: any) {

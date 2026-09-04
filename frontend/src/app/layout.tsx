@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import { AuthProvider } from "@/context/AuthContext";
 import { BadgeToaster } from "@/components/BadgeToaster";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+import CookieBanner from "@/components/CookieBanner";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KamiCode",
-  description: "Prove how well you code, not just how much you code. AI-native competitive programming.",
+  title: "KamiCode — AI-Native Competitive Programming",
+  description: "Prove how well you code, not just how much you code. AI-native competitive programming with real-time PvP Arena.",
 };
 
 export default function RootLayout({
@@ -37,6 +38,7 @@ export default function RootLayout({
             <Sidebar />
             <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">{children}</main>
             <BadgeToaster />
+            <CookieBanner />
           </AuthProvider>
         </ConvexClientProvider>
       </body>

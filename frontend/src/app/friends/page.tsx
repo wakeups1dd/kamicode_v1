@@ -49,7 +49,7 @@ export default function FriendsPage() {
     }
   };
 
-  const handleAccept = async (id: number) => {
+  const handleAccept = async (id: string | number) => {
     try {
       await acceptFriendRequest(id);
       fetchFriends();
@@ -58,7 +58,7 @@ export default function FriendsPage() {
     }
   };
 
-  const handleReject = async (id: number) => {
+  const handleReject = async (id: string | number) => {
     try {
       await rejectFriendRequest(id);
       fetchFriends();

@@ -60,3 +60,33 @@ export const create = mutation({
     return await ctx.db.get(id);
   },
 });
+
+export const update = mutation({
+  args: {
+    id: v.id("problems"),
+    title: v.optional(v.string()),
+    slug: v.optional(v.string()),
+    description: v.optional(v.string()),
+    difficulty: v.optional(v.string()),
+    topic: v.optional(v.string()),
+    constraints: v.optional(v.array(v.string())),
+    examples: v.optional(v.array(v.any())),
+    testCases: v.optional(v.array(v.any())),
+    starterCode: v.optional(v.string()),
+    timeLimitMs: v.optional(v.number()),
+    memoryLimitKb: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...data } = args;
+    await ctx.db.patch(id, data);
+    return await ctx.db.get(id);
+  },
+});
+
+export const remove = mutation({
+  args: { id: v.id("problems") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+    return { success: true };
+  },
+});

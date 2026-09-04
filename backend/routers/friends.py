@@ -1,17 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
-
 from database import get_convex
-from auth import get_current_user
+from schemas import FriendRequestCreate, FriendshipResponse
+from auth import get_required_user
+from convex import ConvexClient
 
 router = APIRouter(prefix="/api/friends", tags=["friends"])
 
-class FriendRequestCreate(BaseModel):
-    friend_username: str
 
 @router.post("/request")
-def send_friend_request(payload: FriendRequestCreate, client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
+def send_friend_request(
+    payload: FriendRequestCreate,
+    client: ConvexClient = Depends(get_convex),
+    current_user: dict = Depends(get_required_user),
+):
     target_user = client.query("users:getByUsername", {"username": payload.friend_username})
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -29,19 +30,31 @@ def send_friend_request(payload: FriendRequestCreate, client = Depends(get_conve
 
     return {"status": "success"}
 
+
 @router.post("/accept/{friendship_id}")
-def accept_friend_request(friendship_id: str, client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
-    # Note: We need a getById for friendships in Convex if we want to check authorization properly,
-    # but for simplicity we assume the mutation does it or we just trust the client for now.
+def accept_friend_request(
+    friendship_id: str,
+    client: ConvexClient = Depends(get_convex),
+    current_user: dict = Depends(get_required_user),
+):
     client.mutation("friends:acceptRequest", {"requestId": friendship_id})
     return {"status": "success"}
 
+
 @router.post("/reject/{friendship_id}")
-def reject_friend_request(friendship_id: str, client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
+def reject_friend_request(
+    friendship_id: str,
+    client: ConvexClient = Depends(get_convex),
+    current_user: dict = Depends(get_required_user),
+):
     client.mutation("friends:rejectRequest", {"requestId": friendship_id})
     return {"status": "success"}
 
+
 @router.get("/")
-def get_friends(client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
+def get_friends(
+    client: ConvexClient = Depends(get_convex),
+    current_user: dict = Depends(get_required_user),
+):
     friends = client.query("friends:listFriends", {"userId": current_user["id"]})
     return friends

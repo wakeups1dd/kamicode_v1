@@ -1,8 +1,8 @@
 """
 Judge0 API client for executing user code in a secure sandbox.
 
-Uses the free Judge0 CE API at https://judge0-ce.p.rapidapi.com
-or a self-hosted instance. Configure via environment variables.
+Uses Judge0 CE API at https://judge0-ce.p.rapidapi.com
+or a self-hosted instance with graceful fallback to local sandboxed runner.
 """
 
 import httpx
@@ -11,6 +11,7 @@ import base64
 from typing import Optional
 
 from config import settings
+from code_runner import run_test_case_local
 
 # Judge0 CE (Community Edition) via RapidAPI — free tier
 JUDGE0_BASE_URL = settings.judge0_base_url
@@ -21,9 +22,10 @@ JUDGE0_API_HOST = settings.judge0_api_host
 LANGUAGE_IDS = {
     "python": 71,       # Python 3.8.1
     "javascript": 63,   # Node.js 12.14.0
+    "typescript": 74,   # TypeScript (3.7.4)
     "cpp": 54,          # C++ (GCC 9.2.0)
-    "java": 62,         # Java (OpenJDK 13.0.1)
     "c": 50,            # C (GCC 9.2.0)
+    "java": 62,         # Java (OpenJDK 13.0.1)
 }
 
 
@@ -60,7 +62,7 @@ async def submit_code(
     Submit code to Judge0 for execution.
     Returns a submission token to poll for results.
     """
-    language_id = LANGUAGE_IDS.get(language, 71)
+    language_id = LANGUAGE_IDS.get(language.lower(), 71)
 
     payload = {
         "source_code": _encode_base64(source_code),
@@ -131,31 +133,41 @@ async def run_test_case(
 ) -> dict:
     """
     Run a single test case and compare the output with expected output.
-    Returns a dict with pass/fail status and details.
+    Falls back to sandboxed local execution on failure.
     """
-    token = await submit_code(
-        source_code=source_code,
-        stdin=test_input,
-        language=language,
-        time_limit=time_limit,
-        memory_limit=memory_limit,
-    )
+    try:
+        token = await submit_code(
+            source_code=source_code,
+            stdin=test_input,
+            language=language,
+            time_limit=time_limit,
+            memory_limit=memory_limit,
+        )
 
-    result = await wait_for_result(token)
+        result = await wait_for_result(token)
 
-    actual_output = (result["stdout"] or "").strip()
-    expected_clean = expected_output.strip()
-    passed = actual_output == expected_clean
+        actual_output = (result["stdout"] or "").strip()
+        expected_clean = expected_output.strip()
+        passed = actual_output == expected_clean
 
-    return {
-        "passed": passed,
-        "input": test_input,
-        "expected": expected_clean,
-        "actual": actual_output,
-        "error": result.get("stderr") or result.get("compile_output"),
-        "time": result.get("time"),
-        "memory": result.get("memory"),
-        "status_id": result["status_id"],
-        "status_description": result["status_description"],
-        "token": token,
-    }
+        return {
+            "passed": passed,
+            "input": test_input,
+            "expected": expected_clean,
+            "actual": actual_output,
+            "error": result.get("stderr") or result.get("compile_output"),
+            "time_ms": int(result["time"] * 1000) if result.get("time") else 0,
+            "status": "success" if passed else "wrong_answer",
+            "status_id": result["status_id"],
+            "status_description": result["status_description"],
+            "token": token,
+        }
+    except Exception:
+        # Fallback to local sandbox runner
+        return await run_test_case_local(
+            source_code=source_code,
+            test_input=test_input,
+            expected_output=expected_output,
+            language=language,
+            timeout_sec=int(time_limit),
+        )

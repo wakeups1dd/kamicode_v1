@@ -104,22 +104,25 @@ export async function getProblem(slug: string): Promise<ProblemDetail> {
 // ---------- Submissions ----------
 
 export async function submitCode(payload: {
-  problem_id: number;
+  problem_id: string | number;
   language?: string;
   source_code: string;
 }): Promise<SubmissionResponse> {
   return apiFetch<SubmissionResponse>("/api/submissions/", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      problem_id: String(payload.problem_id),
+    }),
   });
 }
 
-export async function getSubmission(id: number): Promise<SubmissionResponse> {
+export async function getSubmission(id: string | number): Promise<SubmissionResponse> {
   return apiFetch<SubmissionResponse>(`/api/submissions/${id}`);
 }
 
 export async function pollSubmission(
-  id: number,
+  id: string | number,
   maxRetries = 30,
   intervalMs = 1500
 ): Promise<SubmissionResponse> {
@@ -137,7 +140,7 @@ export async function listMySubmissions(): Promise<SubmissionResponse[]> {
   return apiFetch<SubmissionResponse[]>("/api/submissions/user/me");
 }
 
-export async function getUserProblemStatus(problemId: number): Promise<{
+export async function getUserProblemStatus(problemId: string | number): Promise<{
   solved: boolean;
   status: string | null;
   attempts: number;
@@ -149,7 +152,7 @@ export async function getUserProblemStatus(problemId: number): Promise<{
   }>(`/api/submissions/problem/${problemId}/status`);
 }
 
-export async function getAIAnalysis(submissionId: number): Promise<AIAnalysisResponse> {
+export async function getAIAnalysis(submissionId: string | number): Promise<AIAnalysisResponse> {
   return apiFetch<AIAnalysisResponse>(`/api/analysis/${submissionId}`);
 }
 
@@ -159,8 +162,8 @@ export async function getGlobalLeaderboard(): Promise<LeaderboardEntry[]> {
   return apiFetch<LeaderboardEntry[]>("/api/leaderboard/global");
 }
 
-export async function getCohortLeaderboard(cohortId: number): Promise<LeaderboardEntry[]> {
-  return apiFetch<LeaderboardEntry[]>(`/api/leaderboard/cohort/${cohortId}`);
+export async function getCohortLeaderboard(cohortSlugOrId: string | number): Promise<LeaderboardEntry[]> {
+  return apiFetch<LeaderboardEntry[]>(`/api/leaderboard/cohort/${cohortSlugOrId}`);
 }
 
 // ---------- Cohorts ----------
@@ -207,9 +210,9 @@ export async function deleteCohort(slug: string): Promise<void> {
 }
 
 export interface DailyChallengeResponse {
-  id: number;
-  cohort_id: number;
-  problem_id: number;
+  id: string;
+  cohort_id: string;
+  problem_id: string;
   date: string;
   problem_slug: string;
   problem_title: string;
@@ -222,9 +225,9 @@ export async function getCohortDailyChallenge(slug: string): Promise<DailyChalle
 // ---------- Cohort Challenges ----------
 
 export async function getTodayChallenge(slug: string): Promise<{
-  id: number;
-  cohort_id: number;
-  problem_id: number;
+  id: string;
+  cohort_id: string;
+  problem_id: string;
   date: string;
   problem_title: string | null;
   problem_slug: string | null;
@@ -232,10 +235,10 @@ export async function getTodayChallenge(slug: string): Promise<{
   return apiFetch(`/api/cohorts/${slug}/challenges/today`);
 }
 
-export async function setTodayChallenge(slug: string, problemId: number): Promise<any> {
+export async function setTodayChallenge(slug: string, problemId: string | number): Promise<any> {
   return apiFetch(`/api/cohorts/${slug}/challenges`, {
     method: "POST",
-    body: JSON.stringify({ problem_id: problemId }),
+    body: JSON.stringify({ problem_id: String(problemId) }),
   });
 }
 
@@ -258,11 +261,11 @@ export async function getAllBadges(): Promise<BadgeResponse[]> {
 // ---------- Friends ----------
 
 export interface FriendshipResponse {
-  id: number;
+  id: string;
   user_id: string;
   friend_id: string;
   status: "pending" | "accepted" | "rejected";
-  created_at: string;
+  created_at?: string;
   friend_username: string;
   friend_display_name: string | null;
   friend_avatar_url: string | null;
@@ -279,13 +282,13 @@ export async function sendFriendRequest(friendUsername: string): Promise<Friends
   });
 }
 
-export async function acceptFriendRequest(friendshipId: number): Promise<FriendshipResponse> {
+export async function acceptFriendRequest(friendshipId: string | number): Promise<FriendshipResponse> {
   return apiFetch<FriendshipResponse>(`/api/friends/accept/${friendshipId}`, {
     method: "POST",
   });
 }
 
-export async function rejectFriendRequest(friendshipId: number): Promise<FriendshipResponse> {
+export async function rejectFriendRequest(friendshipId: string | number): Promise<FriendshipResponse> {
   return apiFetch<FriendshipResponse>(`/api/friends/reject/${friendshipId}`, {
     method: "POST",
   });

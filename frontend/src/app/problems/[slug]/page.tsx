@@ -86,7 +86,7 @@ export default function ProblemArenaPage({
     }
   };
 
-  const pollAIAnalysis = async (submissionId: number) => {
+  const pollAIAnalysis = async (submissionId: string | number) => {
     setIsAnalyzing(true);
     setAiAnalysis(null);
     const maxRetries = 20;

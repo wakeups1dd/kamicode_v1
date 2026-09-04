@@ -1,18 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any, Union
 from datetime import datetime, date
-
-
-# ---------- Daily Challenge ----------
-class DailyChallengeResponse(BaseModel):
-    id: int
-    cohort_id: int
-    problem_id: int
-    date: date
-    problem_slug: str
-    problem_title: str
-
-    model_config = {"from_attributes": True}
 
 
 # ---------- Problem Schemas ----------
@@ -26,6 +14,7 @@ class ExampleCase(BaseModel):
 class TestCase(BaseModel):
     input: str
     expected_output: str
+    is_hidden: Optional[bool] = False
 
 
 class ProblemBase(BaseModel):
@@ -34,9 +23,9 @@ class ProblemBase(BaseModel):
     description: str
     difficulty: str
     topic: str = "general"
-    constraints: Optional[str] = None
+    constraints: Optional[Union[str, list[str]]] = None
     examples: Optional[list[ExampleCase]] = None
-    test_cases: list[TestCase]
+    test_cases: list[TestCase] = []
     starter_code: Optional[str] = None
     time_limit_ms: int = 2000
     memory_limit_kb: int = 256000
@@ -63,12 +52,12 @@ class ProblemDetail(BaseModel):
     description: str
     difficulty: str
     topic: str
-    constraints: Optional[str] = None
+    constraints: Optional[Union[str, list[str]]] = None
     examples: Optional[list[ExampleCase]] = None
     starter_code: Optional[str] = None
-    time_limit_ms: int
-    memory_limit_kb: int
-    created_at: Optional[datetime] = None
+    time_limit_ms: Optional[int] = 2000
+    memory_limit_kb: Optional[int] = 256000
+    created_at: Optional[Any] = None
 
     model_config = {"from_attributes": True}
 
@@ -87,6 +76,7 @@ class TestResultItem(BaseModel):
     expected: str
     actual: Optional[str] = None
     error: Optional[str] = None
+    is_hidden: Optional[bool] = False
 
 
 class SubmissionResponse(BaseModel):
@@ -97,11 +87,11 @@ class SubmissionResponse(BaseModel):
     runtime_ms: Optional[float] = None
     memory_kb: Optional[float] = None
     test_results: Optional[list[TestResultItem]] = None
-    passed_count: int
-    total_count: int
+    passed_count: int = 0
+    total_count: int = 0
     stdout: Optional[str] = None
     stderr: Optional[str] = None
-    created_at: Optional[datetime] = None
+    created_at: Optional[Any] = None
 
     model_config = {"from_attributes": True}
 
@@ -109,38 +99,38 @@ class SubmissionResponse(BaseModel):
 # ---------- AI Analysis Schemas ----------
 
 class AIAnalysisResponse(BaseModel):
-    id: int
-    submission_id: int
-    problem_id: int
+    id: str
+    submission_id: str
+    problem_id: str
     time_complexity: Optional[str] = None
     space_complexity: Optional[str] = None
     approach: Optional[str] = None
     approach_explanation: Optional[str] = None
-    efficiency_score: Optional[int] = None
-    code_quality_score: Optional[int] = None
-    overall_score: Optional[int] = None
+    efficiency_score: Optional[Union[int, float]] = None
+    code_quality_score: Optional[Union[int, float]] = None
+    overall_score: Optional[Union[int, float]] = None
     strengths: Optional[list[str]] = None
     improvements: Optional[list[str]] = None
     optimized_solution_hint: Optional[str] = None
-    created_at: Optional[datetime] = None
+    created_at: Optional[Any] = None
 
     model_config = {"from_attributes": True}
 
 
 class SubmissionWithAnalysis(BaseModel):
     """Extended submission response that includes AI analysis if available."""
-    id: int
-    problem_id: int
+    id: str
+    problem_id: str
     language: str
     status: str
     runtime_ms: Optional[float] = None
     memory_kb: Optional[float] = None
     test_results: Optional[list[TestResultItem]] = None
-    passed_count: int
-    total_count: int
+    passed_count: int = 0
+    total_count: int = 0
     stdout: Optional[str] = None
     stderr: Optional[str] = None
-    created_at: Optional[datetime] = None
+    created_at: Optional[Any] = None
     ai_analysis: Optional[AIAnalysisResponse] = None
 
     model_config = {"from_attributes": True}
@@ -159,7 +149,7 @@ class UserResponse(BaseModel):
     username: str
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
-    created_at: Optional[datetime] = None
+    created_at: Optional[Any] = None
 
     model_config = {"from_attributes": True}
 
@@ -181,11 +171,11 @@ class CohortUpdate(BaseModel):
 
 
 class CohortResponse(CohortBase):
-    id: int
+    id: str
     slug: str
     invite_code: str
     created_by: str
-    created_at: datetime
+    created_at: Optional[Any] = None
 
     model_config = {"from_attributes": True}
 
@@ -196,7 +186,7 @@ class CohortMemberResponse(BaseModel):
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
     role: str
-    joined_at: datetime
+    joined_at: Optional[Any] = None
 
 
 class CohortDetailResponse(CohortResponse):
@@ -209,7 +199,7 @@ class UserStreakResponse(BaseModel):
     user_id: str
     current_streak: int
     longest_streak: int
-    last_solve_date: Optional[datetime] = None
+    last_solve_date: Optional[Any] = None
     total_solves: int
 
     model_config = {"from_attributes": True}
@@ -231,22 +221,22 @@ class LeaderboardEntry(BaseModel):
 # ---------- Badge Schemas ----------
 
 class BadgeResponse(BaseModel):
-    id: int
+    id: str
     name: str
     description: str
     icon_name: str
     condition_type: str
     condition_value: int
-    created_at: Optional[datetime] = None
+    created_at: Optional[Any] = None
 
     model_config = {"from_attributes": True}
 
 
 class UserBadgeResponse(BaseModel):
-    id: int
+    id: str
     user_id: str
     badge: BadgeResponse
-    awarded_at: Optional[datetime] = None
+    awarded_at: Optional[Any] = None
 
     model_config = {"from_attributes": True}
 
@@ -258,33 +248,34 @@ class FriendRequestCreate(BaseModel):
 
 
 class FriendActionRequest(BaseModel):
-    friendship_id: int
+    friendship_id: str
     action: str  # 'accept' or 'reject'
 
 
 class FriendshipResponse(BaseModel):
-    id: int
+    id: str
     user_id: str
     friend_id: str
     status: str
     friend_username: Optional[str] = None
     friend_display_name: Optional[str] = None
     friend_avatar_url: Optional[str] = None
-    created_at: Optional[datetime] = None
+    created_at: Optional[Any] = None
 
     model_config = {"from_attributes": True}
+
 
 # ---------- Cohort Challenges Schemas ----------
 
 class DailyChallengeCreate(BaseModel):
-    problem_id: int
+    problem_id: str
 
 
 class DailyChallengeResponse(BaseModel):
-    id: int
-    cohort_id: int
-    problem_id: int
-    date: datetime
+    id: str
+    cohort_id: str
+    problem_id: str
+    date: Optional[Any] = None
     problem_title: Optional[str] = None
     problem_slug: Optional[str] = None
 

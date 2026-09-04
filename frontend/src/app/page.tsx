@@ -157,10 +157,10 @@ function ContributionCalendar({ submissions }: { submissions: SubmissionResponse
 
 interface TimelineProps {
   submissions: SubmissionResponse[];
-  problemMap: Record<number, ProblemSummary>;
+  problemMap: Record<string, ProblemSummary>;
 }
 
-function GitTimeline({ submissions, problemMap }: { submissions: SubmissionResponse[]; problemMap: Record<number, ProblemSummary> }) {
+function GitTimeline({ submissions, problemMap }: { submissions: SubmissionResponse[]; problemMap: Record<string, ProblemSummary> }) {
   const recentCommits = submissions.slice(0, 3).map((sub) => {
     const prob = problemMap[sub.problem_id];
     const title = prob?.title || `Problem ID: ${sub.problem_id}`;
@@ -273,11 +273,11 @@ function TopicLanguagesBar({
   const acceptedSubs = submissions.filter(s => s.status === "accepted");
   
   // Calculate unique problems solved per topic
-  const uniqueSolved = new Set<number>();
-  acceptedSubs.forEach(s => uniqueSolved.add(s.problem_id));
+  const uniqueSolved = new Set<string>();
+  acceptedSubs.forEach(s => uniqueSolved.add(String(s.problem_id)));
   
   uniqueSolved.forEach(pid => {
-    const prob = problems.find(p => p.id === pid);
+    const prob = problems.find(p => String(p.id) === String(pid));
     if (prob) {
       solvedByTopic[prob.topic] = (solvedByTopic[prob.topic] || 0) + 1;
     }
@@ -351,7 +351,7 @@ export default function HomePage() {
   const [problems, setProblems] = useState<ProblemSummary[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
   const [streak, setStreak] = useState<UserStreakResponse | null>(null);
-  const [problemMap, setProblemMap] = useState<Record<number, ProblemSummary>>({});
+  const [problemMap, setProblemMap] = useState<Record<string, ProblemSummary>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -368,9 +368,9 @@ export default function HomePage() {
         setSubmissions(submissionsData);
         setStreak(streakData);
 
-        const pMap: Record<number, ProblemSummary> = {};
+        const pMap: Record<string, ProblemSummary> = {};
         problemsData.forEach(p => {
-          pMap[p.id] = p;
+          pMap[String(p.id)] = p;
         });
         setProblemMap(pMap);
       } catch (err) {
