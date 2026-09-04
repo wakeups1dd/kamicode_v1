@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, use } from "react";
 import { useRouter } from "next/navigation";
-import { getProblem, submitCode, getCurrentUser, getAIAnalysis } from "@/lib/api";
+import { getProblem, submitCode, getCurrentUser, getAIAnalysis, getSubmission } from "@/lib/api";
 import type { ProblemDetail, SubmissionResponse, AIAnalysisResponse } from "@/lib/types";
 
 import ProblemPanel from "@/components/ProblemPanel";
@@ -238,7 +238,7 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
       for (let i = 0; i < 15; i++) {
         if (finalResult.status !== "pending" && finalResult.status !== "running") break;
         await new Promise(r => setTimeout(r, 1000));
-        const check = await fetch(`${apiBase}/api/submissions/${result.id}`).then(r => r.json());
+        const check = await getSubmission(result.id);
         finalResult = check;
       }
 
