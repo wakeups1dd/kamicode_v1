@@ -29,3 +29,6 @@ build/
 .DS_Store
 
 implementation_plan.md
+
+.agents/
+.claude/
