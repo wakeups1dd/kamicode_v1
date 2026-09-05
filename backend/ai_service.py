@@ -1,5 +1,5 @@
 """
-OpenAI-powered code analysis service for KamiCode.
+AI-powered code analysis service for KamiCode (supports Google Gemini & OpenAI).
 
 Analyzes accepted submissions for:
 - Time and space complexity
@@ -10,9 +10,14 @@ Analyzes accepted submissions for:
 
 import json
 import re
+import logging
 from typing import Optional
 
+import httpx
+
 from config import settings
+
+logger = logging.getLogger("kamicode.ai")
 
 try:
     from openai import AsyncOpenAI
@@ -20,19 +25,19 @@ try:
 except ImportError:
     OPENAI_AVAILABLE = False
 
-_client: Optional["AsyncOpenAI"] = None
+_openai_client: Optional["AsyncOpenAI"] = None
 
 
-def _get_client() -> "AsyncOpenAI":
-    global _client
+def _get_openai_client() -> "AsyncOpenAI":
+    global _openai_client
     if not OPENAI_AVAILABLE:
-        raise RuntimeError("OpenAI package is not installed. Run: pip install openai")
-    if _client is None:
+        raise RuntimeError("OpenAI package is not installed.")
+    if _openai_client is None:
         api_key = settings.openai_api_key
         if not api_key:
-            raise RuntimeError("OPENAI_API_KEY is not set in environment or .env file")
-        _client = AsyncOpenAI(api_key=api_key)
-    return _client
+            raise RuntimeError("OPENAI_API_KEY is not set.")
+        _openai_client = AsyncOpenAI(api_key=api_key)
+    return _openai_client
 
 
 ANALYSIS_SYSTEM_PROMPT = """You are an expert algorithm judge and code reviewer for KamiCode, a competitive coding platform.
@@ -71,7 +76,7 @@ def _generate_mock_analysis(
     language: str,
     runtime_ms: Optional[float] = None,
 ) -> dict:
-    """Intelligently heuristic-based mock analysis when OpenAI API is not configured."""
+    """Intelligently heuristic-based mock analysis when no AI API key is configured."""
     has_hashmap = any(w in source_code for w in ["dict", "{}", "map", "HashMap", "Map", "set(", "unordered_map"])
     has_sort = any(w in source_code for w in ["sort", "sorted", "Arrays.sort", "std::sort"])
     has_nested_loop = len(re.findall(r"\b(for|while)\b", source_code)) >= 2 and ("range" in source_code or "{" in source_code)
@@ -118,7 +123,6 @@ def _generate_mock_analysis(
         code_quality -= 5
 
     overall = int(eff_score * 0.6 + code_quality * 0.4)
-
     runtime_note = f" (executed in {runtime_ms:.1f}ms)" if runtime_ms else ""
 
     return {
@@ -143,6 +147,79 @@ def _generate_mock_analysis(
     }
 
 
+async def _analyze_with_gemini(user_prompt: str) -> dict:
+    """Analyze code using Google Gemini API with automatic model fallback."""
+    preferred_model = settings.gemini_model or "gemini-flash-latest"
+    models_to_try = [preferred_model]
+    for fallback in ["gemini-flash-latest", "gemini-3.7-flash", "gemini-2.5-flash"]:
+        if fallback not in models_to_try:
+            models_to_try.append(fallback)
+
+    last_err = None
+    for model in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={settings.gemini_api_key}"
+        payload = {
+            "system_instruction": {
+                "parts": [{"text": ANALYSIS_SYSTEM_PROMPT}]
+            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": user_prompt}]
+                }
+            ],
+            "generationConfig": {
+                "response_mime_type": "application/json",
+                "temperature": 0.2,
+                "maxOutputTokens": 4096,
+            }
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+                data = response.json()
+
+                candidates = data.get("candidates", [])
+                if not candidates:
+                    raise ValueError(f"Gemini {model} returned empty response candidates")
+
+                parts = candidates[0].get("content", {}).get("parts", [])
+                if not parts:
+                    raise ValueError(f"Gemini {model} returned empty content parts")
+
+                raw_text = parts[0].get("text", "{}")
+                cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE).strip()
+                analysis = json.loads(cleaned)
+                analysis["raw_response"] = raw_text
+                return analysis
+        except Exception as e:
+            last_err = e
+            logger.warning(f"Gemini model {model} attempt failed: {e}. Trying next fallback...")
+
+    raise last_err or RuntimeError("All Gemini model attempts failed")
+
+
+async def _analyze_with_openai(user_prompt: str) -> dict:
+    """Analyze code using OpenAI API."""
+    client = _get_openai_client()
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": ANALYSIS_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.3,
+        max_tokens=1000,
+        response_format={"type": "json_object"},
+    )
+    raw_content = response.choices[0].message.content or "{}"
+    analysis = json.loads(raw_content)
+    analysis["raw_response"] = raw_content
+    return analysis
+
+
 async def analyze_code(
     source_code: str,
     problem_title: str,
@@ -152,18 +229,8 @@ async def analyze_code(
     memory_kb: Optional[float] = None,
 ) -> dict:
     """
-    Send a code solution to OpenAI for analysis or generate structured heuristic analysis.
+    Send a code solution to Gemini (or OpenAI) for analysis or generate structured heuristic analysis.
     """
-    if not OPENAI_AVAILABLE or not settings.openai_api_key:
-        return _generate_mock_analysis(
-            source_code=source_code,
-            problem_title=problem_title,
-            language=language,
-            runtime_ms=runtime_ms,
-        )
-
-    client = _get_client()
-
     user_prompt = f"""## Problem: {problem_title}
 
 ### Description
@@ -180,30 +247,27 @@ async def analyze_code(
 
 Analyze this solution."""
 
-    try:
-        response = await client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": ANALYSIS_SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.3,
-            max_tokens=1000,
-            response_format={"type": "json_object"},
-        )
+    # 1. Try Gemini first if GEMINI_API_KEY is configured
+    if settings.gemini_api_key:
+        try:
+            return await _analyze_with_gemini(user_prompt)
+        except Exception as e:
+            logger.warning(f"Gemini analysis failed: {e}. Attempting fallback...")
 
-        raw_content = response.choices[0].message.content or "{}"
-        analysis = json.loads(raw_content)
-        analysis["raw_response"] = raw_content
-        return analysis
-    except Exception as e:
-        print(f"[WARN] OpenAI analysis failed: {e}. Falling back to heuristic analysis.")
-        return _generate_mock_analysis(
-            source_code=source_code,
-            problem_title=problem_title,
-            language=language,
-            runtime_ms=runtime_ms,
-        )
+    # 2. Try OpenAI if OPENAI_API_KEY is configured
+    if settings.openai_api_key and OPENAI_AVAILABLE:
+        try:
+            return await _analyze_with_openai(user_prompt)
+        except Exception as e:
+            logger.warning(f"OpenAI analysis failed: {e}. Falling back to heuristic analysis.")
+
+    # 3. Fallback to Local Heuristic Engine
+    return _generate_mock_analysis(
+        source_code=source_code,
+        problem_title=problem_title,
+        language=language,
+        runtime_ms=runtime_ms,
+    )
 
 
 def is_available() -> bool:

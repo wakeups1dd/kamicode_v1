@@ -63,9 +63,11 @@ async def readiness_check(client: ConvexClient = Depends(get_convex)):
         is_ready = False
 
     # 3. AI Service Availability
+    has_ai = bool(settings.gemini_api_key or settings.openai_api_key)
+    ai_provider = "Gemini" if settings.gemini_api_key else ("OpenAI" if settings.openai_api_key else "AST/Heuristic Fallback")
     checks["ai_service"] = {
-        "status": "configured" if settings.openai_api_key else "fallback_mode",
-        "provider": "OpenAI" if settings.openai_api_key else "AST/Heuristic Fallback",
+        "status": "configured" if has_ai else "fallback_mode",
+        "provider": ai_provider,
     }
 
     status_code = status.HTTP_200_OK if is_ready else status.HTTP_503_SERVICE_UNAVAILABLE

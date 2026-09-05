@@ -16,7 +16,7 @@ The project is structured as a monorepo with two main components:
 ### Backend
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python)
 - **Code Execution**: Integrations for running code via Piston, Judge0, or JDoodle.
-- **AI Analysis**: OpenAI integration for intelligent code analysis and feedback.
+- **AI Analysis**: Google Gemini (or OpenAI) integration for intelligent code complexity analysis and feedback.
 - **API Endpoints**: Routers for problems, submissions, analysis, cohorts, leaderboard, streaks, arena, and badges.
 
 ## 🚀 Getting Started
@@ -27,7 +27,7 @@ The project is structured as a monorepo with two main components:
 - Docker (optional, for backend)
 - Convex CLI
 - Clerk Account (for Auth)
-- OpenAI API Key (for AI features)
+- Google Gemini API Key (free from https://aistudio.google.com/) or OpenAI API Key
 
 ### Frontend Setup
 1. Navigate to the frontend directory:

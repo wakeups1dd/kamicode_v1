@@ -41,7 +41,8 @@ async def lifespan(app: FastAPI):
     logger.info("KamiCode API initialized")
     logger.info(f"Convex DB: {settings.convex_url}")
     logger.info(f"Code Runner: {settings.code_runner_mode}")
-    logger.info(f"AI Service: {'OpenAI' if settings.openai_api_key else 'Local Heuristic Engine'}")
+    ai_provider = "Gemini" if settings.gemini_api_key else ("OpenAI" if settings.openai_api_key else "Local Heuristic Engine")
+    logger.info(f"AI Service: {ai_provider}")
     yield
     logger.info("KamiCode API shutting down...")
 

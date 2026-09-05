@@ -37,7 +37,9 @@ class Settings(BaseSettings):
     # Convex DB
     convex_url: str = ""
 
-    # AI Analysis
+    # AI Analysis (Gemini / OpenAI)
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.7-flash"
     openai_api_key: str = ""
 
     # Code Runner

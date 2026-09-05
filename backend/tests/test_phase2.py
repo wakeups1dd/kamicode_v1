@@ -108,11 +108,13 @@ async def test_java_malicious_operations_blocked():
 def test_isolated_env_strips_sensitive_keys(monkeypatch):
     """Verify platform secrets are stripped from subprocess env."""
     monkeypatch.setenv("CLERK_SECRET_KEY", "sk_test_super_secret")
+    monkeypatch.setenv("GEMINI_API_KEY", "AIzaSy_super_secret_gemini_key")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-proj-super_secret_ai_key")
     monkeypatch.setenv("CONVEX_URL", "https://secret.convex.cloud")
 
     env = _get_isolated_env("/tmp/sandbox")
     assert "CLERK_SECRET_KEY" not in env
+    assert "GEMINI_API_KEY" not in env
     assert "OPENAI_API_KEY" not in env
     assert "CONVEX_URL" not in env
     assert env["PYTHONNOUSERSITE"] == "1"
