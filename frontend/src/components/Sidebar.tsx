@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import SearchModal from "./SearchModal";
 import SettingsModal from "./SettingsModal";
 import ConfirmModal from "./ConfirmModal";
+import { ToriiGateLogo } from "./ToriiLogo";
 
 /* ── Icon components (inline SVGs to avoid extra deps) ──────── */
 
@@ -209,8 +210,8 @@ export default function Sidebar() {
         {/* Logo Container */}
         <div className="flex items-center gap-3 px-4 h-[68px] flex-shrink-0 border-b-4 border-black bg-secondary-background z-10">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-md bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 shadow-[2px_2px_0px_0px_#000] logo-shake transition-transform">
-              K
+            <div className="w-10 h-10 rounded-md bg-main border-2 border-black flex items-center justify-center text-main-foreground flex-shrink-0 shadow-[2px_2px_0px_0px_#000] logo-shake transition-transform">
+              <ToriiGateLogo className="w-6 h-6 fill-main-foreground" />
             </div>
             {!collapsed && (
               <span className="text-xl font-black tracking-tight text-foreground whitespace-nowrap">
