@@ -58,7 +58,11 @@ export default function ArenaLobby() {
     
     try {
       const user = await getCurrentUser();
-      const userId = user?.id || "mock-user-id";
+      if (!user?.id) {
+        router.push("/auth");
+        return;
+      }
+      const userId = user.id;
       
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const wsBase = apiBase.replace(/^http/, "ws");

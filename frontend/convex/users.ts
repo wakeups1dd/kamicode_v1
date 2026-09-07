@@ -15,6 +15,7 @@ export const sync = mutation({
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .first();
 
+    let userDocId;
     if (existing) {
       await ctx.db.patch(existing._id, {
         username: args.username,
@@ -22,16 +23,49 @@ export const sync = mutation({
         avatarUrl: args.avatarUrl,
         displayName: args.displayName,
       });
-      return existing._id;
+      userDocId = existing._id;
     } else {
-      return await ctx.db.insert("users", {
+      userDocId = await ctx.db.insert("users", {
         userId: args.userId,
         username: args.username,
         email: args.email,
         avatarUrl: args.avatarUrl,
         displayName: args.displayName,
+        eloRating: 1200,
       });
     }
+
+    // Ensure user streak record exists
+    const existingStreak = await ctx.db
+      .query("userStreaks")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (!existingStreak) {
+      await ctx.db.insert("userStreaks", {
+        userId: args.userId,
+        currentStreak: 0,
+        longestStreak: 0,
+        totalSolves: 0,
+      });
+    }
+
+    // Ensure user stats record exists
+    const existingStats = await ctx.db
+      .query("userStats")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (!existingStats) {
+      await ctx.db.insert("userStats", {
+        userId: args.userId,
+        arenaMatches: 0,
+        arenaWins: 0,
+        eloRating: 1200,
+      });
+    }
+
+    return userDocId;
   },
 });
 

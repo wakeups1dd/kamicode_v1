@@ -189,9 +189,15 @@ export default function Sidebar() {
     return pathname.startsWith(href);
   };
 
-  const username = user?.email?.split("@")[0] || "guest";
-  const displayName = user?.user_metadata?.display_name || username.charAt(0).toUpperCase() + username.slice(1);
-  const avatarInit = displayName.charAt(0).toUpperCase();
+  const email = user?.primaryEmailAddress?.emailAddress || user?.email || "";
+  const ghAccount = user?.externalAccounts?.find(
+    (acc: any) => acc.provider === "github" || acc.provider === "oauth_github"
+  );
+  const ghUsername = (ghAccount as any)?.username;
+  const username = user?.username || ghUsername || (email ? email.split("@")[0] : "guest");
+  const displayName = user?.fullName || user?.firstName || (ghUsername ? ghUsername : (user ? username : "Guest"));
+  const avatarUrl = user?.imageUrl || user?.user_metadata?.avatar_url;
+  const avatarInit = (displayName || "G").charAt(0).toUpperCase();
 
   return (
     <>
@@ -298,35 +304,48 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* User Box at bottom with explicit Sign Out */}
+        {/* User Box at bottom with explicit Sign Out / Sign In */}
         <div className="px-3 py-4 border-t-4 border-black bg-background/50">
-          <div
-            onClick={() => setIsSignOutConfirmOpen(true)}
-            className={`flex items-center gap-3 p-2 rounded-md border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 transition-all cursor-pointer ${
-              collapsed ? "justify-center p-1.5" : "p-2"
-            }`}
-            title="Sign Out"
-          >
-            {user?.user_metadata?.avatar_url ? (
-              <img
-                src={user.user_metadata.avatar_url}
-                alt={username}
-                className="w-8 h-8 rounded-md border-2 border-black object-cover"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-md bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
-                {avatarInit}
-              </div>
-            )}
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-black truncate">{displayName}</div>
-                <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
-                  Sign Out
+          {user ? (
+            <div
+              onClick={() => setIsSignOutConfirmOpen(true)}
+              className={`flex items-center gap-3 p-2 rounded-md border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 transition-all cursor-pointer ${
+                collapsed ? "justify-center p-1.5" : "p-2"
+              }`}
+              title="Sign Out"
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={username}
+                  className="w-8 h-8 rounded-md border-2 border-black object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-md bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
+                  {avatarInit}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+              {!collapsed && (
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-black truncate">{displayName}</div>
+                  <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
+                    Sign Out
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/auth"
+              className={`flex items-center gap-2 p-2 rounded-md border-2 border-black bg-main text-main-foreground shadow-[2px_2px_0px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all font-black text-xs ${
+                collapsed ? "justify-center p-1.5" : "p-2"
+              }`}
+              title="Sign In"
+            >
+              <IconUser className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span>Sign In</span>}
+            </Link>
+          )}
         </div>
       </aside>
 

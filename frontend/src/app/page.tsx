@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { listProblems, getMyStreak, listMySubmissions } from "@/lib/api";
 import type { ProblemSummary, SubmissionResponse, UserStreakResponse } from "@/lib/types";
 import {
@@ -348,11 +349,20 @@ function TopicLanguagesBar({
 /* ── Main Dashboard Page ────────────────────────────────────── */
 
 export default function HomePage() {
+  const { user } = useAuth();
   const [problems, setProblems] = useState<ProblemSummary[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
   const [streak, setStreak] = useState<UserStreakResponse | null>(null);
   const [problemMap, setProblemMap] = useState<Record<string, ProblemSummary>>({});
   const [loading, setLoading] = useState(true);
+
+  const email = user?.primaryEmailAddress?.emailAddress || user?.email || "";
+  const ghAccount = user?.externalAccounts?.find(
+    (acc: any) => acc.provider === "github" || acc.provider === "oauth_github"
+  );
+  const ghUsername = (ghAccount as any)?.username;
+  const username = user?.username || ghUsername || (email ? email.split("@")[0] : null);
+  const displayName = user?.fullName || user?.firstName || ghUsername || username || "Coder";
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -381,7 +391,7 @@ export default function HomePage() {
     };
     
     loadDashboard();
-  }, []);
+  }, [user]);
 
   const totalSolved = new Set(
     submissions.filter(s => s.status === "accepted").map(s => s.problem_id)
@@ -406,11 +416,13 @@ export default function HomePage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono font-bold">
               <User className="w-4 h-4 text-black dark:text-white" />
-              <span className="hover:underline cursor-pointer">Coder</span>
+              <Link href={user ? "/profile" : "/auth"} className="hover:underline cursor-pointer">
+                {displayName}
+              </Link>
               <span>/</span>
               <span className="text-foreground font-black hover:underline cursor-pointer">dashboard</span>
               <span className="text-[9px] px-2 py-0.5 rounded-xl border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
-                Public
+                {user ? "Online" : "Guest"}
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">

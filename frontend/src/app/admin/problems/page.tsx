@@ -126,19 +126,31 @@ export default function AdminProblemsPage() {
         memory_limit_kb: Number(memoryLimitKb),
       };
 
-      const token = localStorage.getItem("clerk_token") || "mock-token";
+      let token = "";
+      try {
+        if (typeof window !== "undefined" && (window as any).Clerk?.session) {
+          token = await (window as any).Clerk.session.getToken();
+        }
+      } catch (e) {
+        console.warn("Could not retrieve Clerk session token:", e);
+      }
+
       const url = isCreating || !selectedProblem?.id
         ? `${apiBase}/api/problems/`
         : `${apiBase}/api/problems/${selectedProblem.id}`;
 
       const method = isCreating || !selectedProblem?.id ? "POST" : "PUT";
 
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify(payload)
       });
 

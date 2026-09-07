@@ -74,7 +74,11 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
     const initArena = async () => {
       try {
         const user = await getCurrentUser();
-        const uId = user?.id || "mock-user-id";
+        if (!user?.id) {
+          router.push("/auth");
+          return;
+        }
+        const uId = user.id;
         setUserId(uId);
 
         const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";

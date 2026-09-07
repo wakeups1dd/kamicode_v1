@@ -32,6 +32,12 @@ class OfflineFallbackConvexClient:
 def get_convex():
     if not convex_client:
         return OfflineFallbackConvexClient()
-    if not _is_server_reachable(settings.convex_url, timeout_sec=0.2):
+    
+    # If using Convex Cloud, return the client directly
+    if settings.convex_url and ("convex.cloud" in settings.convex_url or settings.convex_url.startswith("https://")):
+        return convex_client
+
+    # For local self-hosted Convex, check local connectivity
+    if not _is_server_reachable(settings.convex_url, timeout_sec=1.0):
         return OfflineFallbackConvexClient()
     return convex_client

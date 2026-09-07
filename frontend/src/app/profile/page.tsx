@@ -93,9 +93,64 @@ export default function ProfilePage() {
     );
   };
 
-  const username = user?.email?.split("@")[0] || "coder";
-  const displayName = user?.user_metadata?.display_name || username.charAt(0).toUpperCase() + username.slice(1);
-  const avatarInit = displayName.charAt(0).toUpperCase();
+  const email = user?.primaryEmailAddress?.emailAddress || user?.email || "";
+  const ghAccount = user?.externalAccounts?.find(
+    (acc: any) => acc.provider === "github" || acc.provider === "oauth_github"
+  );
+  const ghUsername = (ghAccount as any)?.username;
+  const username = user?.username || ghUsername || (email ? email.split("@")[0] : "coder");
+  const displayName = user?.fullName || user?.firstName || (ghUsername ? ghUsername : username);
+  const avatarUrl = user?.imageUrl || user?.user_metadata?.avatar_url;
+  const avatarInit = (displayName || "C").charAt(0).toUpperCase();
+  const createdAt = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString()
+    : user?.created_at
+    ? new Date(user.created_at).toLocaleDateString()
+    : "N/A";
+
+  if (!user) {
+    return (
+      <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
+        <div className="bg-secondary-background border-b-4 border-black py-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[1000px] mx-auto space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
+              <User className="w-7 h-7 text-main" />
+              <span>Developer <span className="text-main">Profile</span></span>
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Authenticate to access your solve distributions, streak logs, Elo rating, and trophy showcase.
+            </p>
+          </div>
+        </div>
+
+        <div className="max-w-[600px] mx-auto px-4 py-16 text-center space-y-6">
+          <div className="bg-secondary-background border-4 border-black p-8 rounded-2xl shadow-[8px_8px_0px_#000] space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-main border-2 border-black mx-auto flex items-center justify-center shadow-[3px_3px_0px_#000]">
+              <Zap className="w-8 h-8 text-main-foreground" />
+            </div>
+            <h2 className="text-2xl font-black text-foreground">Sign In to View Your Profile</h2>
+            <p className="text-sm text-muted-foreground font-medium">
+              Create an account or sign in with GitHub to track your competitive coding progress, maintain daily streaks, and earn badges.
+            </p>
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/auth"
+                className="px-6 py-3 rounded-xl bg-main text-main-foreground font-black text-sm border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+              >
+                Sign In with GitHub
+              </Link>
+              <Link
+                href="/auth?mode=signup"
+                className="px-6 py-3 rounded-xl bg-background text-foreground font-bold text-sm border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-background text-foreground font-sans pb-12 animate-fade">
@@ -133,11 +188,11 @@ export default function ProfilePage() {
           
           {/* Main User Card */}
           <div className="bg-secondary-background border-4 border-black p-6 rounded-xl shadow-[4px_4px_0px_#000] flex flex-col items-center justify-center text-center gap-4 select-none">
-            {user?.user_metadata?.avatar_url ? (
+            {avatarUrl ? (
               <img
-                src={user.user_metadata.avatar_url}
+                src={avatarUrl}
                 alt={username}
-                className="w-20 h-20 rounded-full border-4 border-black shadow-[3px_3px_0px_#000]"
+                className="w-20 h-20 rounded-full border-4 border-black shadow-[3px_3px_0px_#000] object-cover"
               />
             ) : (
               <div className="w-20 h-20 rounded-full border-4 border-black bg-purple-300 dark:bg-purple-700 flex items-center justify-center font-mono font-black text-3xl text-black shadow-[3px_3px_0px_#000]">
@@ -153,12 +208,12 @@ export default function ProfilePage() {
             <div className="w-full border-t border-black pt-3 flex flex-col gap-1.5 font-mono text-[10px] text-zinc-500 font-bold">
               <div className="flex justify-between">
                 <span>Account Email:</span>
-                <span className="text-foreground truncate max-w-[150px]">{user?.email}</span>
+                <span className="text-foreground truncate max-w-[150px]">{email || "N/A"}</span>
               </div>
               <div className="flex justify-between">
                 <span>Member Since:</span>
                 <span className="text-foreground">
-                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A"}
+                  {createdAt}
                 </span>
               </div>
             </div>

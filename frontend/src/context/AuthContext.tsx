@@ -32,11 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loading = !isLoaded;
 
-  // Legacy mock methods (Auth page now uses <SignIn /> directly)
-  const signUp = async () => ({ error: null });
-  const signIn = async () => ({ error: null });
-  const signInWithGithub = async () => {};
-  const signInWithGoogle = async () => {};
+  const signUp = async () => {
+    if (typeof window !== "undefined") window.location.href = "/auth?mode=signup";
+    return { error: null };
+  };
+  const signIn = async () => {
+    if (typeof window !== "undefined") window.location.href = "/auth";
+    return { error: null };
+  };
+  const signInWithGithub = async () => {
+    if (typeof window !== "undefined") window.location.href = "/auth";
+  };
+  const signInWithGoogle = async () => {
+    if (typeof window !== "undefined") window.location.href = "/auth";
+  };
 
   return (
     <AuthContext.Provider
@@ -48,7 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signInWithGithub,
         signInWithGoogle,
-        signOut: async () => { await signOut(); },
+        signOut: async () => {
+          await signOut();
+          if (typeof window !== "undefined") {
+            window.location.href = "/";
+          }
+        },
       }}
     >
       {children}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getFriends, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, FriendshipResponse } from "@/lib/api";
@@ -76,7 +77,31 @@ export default function FriendsPage() {
     );
   }
 
-  const myId = user?.id || "dev-user-id"; // using dev fallback
+  if (!user) {
+    return (
+      <div className="max-w-xl mx-auto p-6 md:p-12 text-center animate-fade space-y-6">
+        <div className="bg-secondary-background border-4 border-black p-8 rounded-2xl shadow-[8px_8px_0px_#000] space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-main border-2 border-black mx-auto flex items-center justify-center shadow-[3px_3px_0px_#000]">
+            <Users className="w-8 h-8 text-main-foreground" />
+          </div>
+          <h2 className="text-2xl font-black text-foreground">Sign In to Connect with Friends</h2>
+          <p className="text-sm text-muted-foreground font-medium">
+            Join the community, send friend requests by username, and challenge your peers to 1v1 Arena battles.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/auth"
+              className="inline-block px-6 py-3 rounded-xl bg-main text-main-foreground font-black text-sm border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+            >
+              Sign In with GitHub
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const myId = user.id;
 
   const accepted = friendships.filter(f => f.status === "accepted");
   const incoming = friendships.filter(f => f.status === "pending" && f.friend_id === myId);
