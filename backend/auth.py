@@ -16,13 +16,24 @@ from database import get_convex
 _jwks_client: Optional[PyJWKClient] = None
 
 
-def get_jwks_client() -> Optional[PyJWKClient]:
-    """Get or initialize the cached PyJWKClient for Clerk."""
+def get_jwks_client(token: Optional[str] = None) -> Optional[PyJWKClient]:
+    """Get or initialize the cached PyJWKClient for Clerk, using settings or token's iss claim."""
     global _jwks_client
-    if _jwks_client is None:
-        jwks_url = settings.get_jwks_url()
-        if jwks_url:
-            _jwks_client = PyJWKClient(jwks_url, cache_keys=True, max_cached_keys=16, cache_jwk_set=True, lifespan=3600)
+    if _jwks_client is not None:
+        return _jwks_client
+
+    jwks_url = settings.get_jwks_url()
+    if not jwks_url and token:
+        try:
+            unverified_payload = jwt.decode(token, options={"verify_signature": False})
+            iss = unverified_payload.get("iss")
+            if iss and ("clerk" in iss or iss.startswith("https://")):
+                jwks_url = f"{iss.rstrip('/')}/.well-known/jwks.json"
+        except Exception:
+            pass
+
+    if jwks_url:
+        _jwks_client = PyJWKClient(jwks_url, cache_keys=True, max_cached_keys=16, cache_jwk_set=True, lifespan=3600)
     return _jwks_client
 
 
@@ -56,13 +67,13 @@ async def get_current_user_id(request: Request) -> Optional[str]:
         return None
 
     token = auth_header.split(" ")[1]
-    jwks_client = get_jwks_client()
+    jwks_client = get_jwks_client(token)
 
     if not jwks_client:
         # Fallback if JWKS URL cannot be resolved
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Clerk JWKS configuration is missing on server",
+            detail="Clerk JWKS configuration is missing on server. Please configure CLERK_JWKS_URL or CLERK_PUBLISHABLE_KEY.",
         )
 
     try:
