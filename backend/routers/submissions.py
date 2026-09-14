@@ -131,21 +131,29 @@ async def _run_ai_analysis(submission_id: str, problem_id: str, client: Optional
             memory_kb=0,
         )
 
-        client.mutation("analysis:create", {
+        analysis_payload = {
             "submissionId": submission_id,
             "problemId": problem_id,
-            "timeComplexity": result.get("time_complexity"),
-            "spaceComplexity": result.get("space_complexity"),
-            "approach": result.get("approach"),
-            "approachExplanation": result.get("approach_explanation"),
-            "efficiencyScore": result.get("efficiency_score"),
-            "codeQualityScore": result.get("code_quality_score"),
-            "overallScore": result.get("overall_score"),
             "strengths": result.get("strengths", []),
             "improvements": result.get("improvements", []),
-            "optimizedSolutionHint": result.get("optimized_solution_hint"),
-            "rawResponse": result.get("raw_response"),
-        })
+        }
+        
+        for key, result_key in [
+            ("timeComplexity", "time_complexity"),
+            ("spaceComplexity", "space_complexity"),
+            ("approach", "approach"),
+            ("approachExplanation", "approach_explanation"),
+            ("efficiencyScore", "efficiency_score"),
+            ("codeQualityScore", "code_quality_score"),
+            ("overallScore", "overall_score"),
+            ("optimizedSolutionHint", "optimized_solution_hint"),
+            ("rawResponse", "raw_response"),
+        ]:
+            val = result.get(result_key)
+            if val is not None:
+                analysis_payload[key] = val
+
+        client.mutation("analysis:create", analysis_payload)
     except Exception as e:
         print(f"[ERROR] Background AI analysis failed for submission {submission_id}: {e}")
 
@@ -230,15 +238,19 @@ async def _execute_submission(
             else:
                 final_status = "wrong_answer"
 
-        client.mutation("submissions:updateResult", {
+        update_args = {
             "submissionId": submission_id,
             "status": final_status,
             "passedCount": passed_count,
             "totalCount": len(test_cases),
             "testResults": test_results,
-            "runtimeMs": round(total_time * 1000, 2) if total_time else None,
-            "stderr": final_stderr,
-        })
+        }
+        if total_time:
+            update_args["runtimeMs"] = round(total_time * 1000, 2)
+        if final_stderr is not None:
+            update_args["stderr"] = final_stderr
+
+        client.mutation("submissions:updateResult", update_args)
 
         # Update user streak and evaluate badges if accepted
         if final_status == "accepted" and user_id and user_id != "anonymous":
