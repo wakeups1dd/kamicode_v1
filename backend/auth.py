@@ -70,10 +70,10 @@ async def get_current_user_id(request: Request) -> Optional[str]:
     jwks_client = get_jwks_client(token)
 
     if not jwks_client:
-        # Fallback if JWKS URL cannot be resolved
+        # Cannot verify token without JWKS — reject as unauthorized
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Clerk JWKS configuration is missing on server. Please configure CLERK_JWKS_URL or CLERK_PUBLISHABLE_KEY.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unable to verify authentication token. Server JWKS configuration is unavailable.",
         )
 
     try:
