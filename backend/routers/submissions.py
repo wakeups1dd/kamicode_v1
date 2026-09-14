@@ -415,6 +415,14 @@ def get_submission(submission_id: str, client: ConvexClient = Depends(get_convex
         analysis["id"] = str(analysis["_id"])
         analysis["submission_id"] = str(analysis.get("submissionId", submission_id))
         analysis["problem_id"] = str(analysis.get("problemId", sub.get("problemId", "")))
+        analysis["time_complexity"] = analysis.get("timeComplexity")
+        analysis["space_complexity"] = analysis.get("spaceComplexity")
+        analysis["approach"] = analysis.get("approach")
+        analysis["approach_explanation"] = analysis.get("approachExplanation")
+        analysis["efficiency_score"] = analysis.get("efficiencyScore")
+        analysis["code_quality_score"] = analysis.get("codeQualityScore")
+        analysis["overall_score"] = analysis.get("overallScore")
+        analysis["optimized_solution_hint"] = analysis.get("optimizedSolutionHint")
         analysis["created_at"] = analysis.get("_creationTime")
 
     return {
