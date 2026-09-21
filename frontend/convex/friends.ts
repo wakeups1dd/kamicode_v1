@@ -102,3 +102,44 @@ export const listPendingRequests = query({
     return requests;
   },
 });
+
+export const listAllForUser = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const sent = await ctx.db
+      .query("friendships")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const received = await ctx.db
+      .query("friendships")
+      .withIndex("by_friend", (q) => q.eq("friendId", args.userId))
+      .collect();
+
+    const allFriendships = [...sent, ...received];
+    const result = [];
+
+    for (const f of allFriendships) {
+      if (f.status === "rejected") continue;
+
+      const otherUserId = f.userId === args.userId ? f.friendId : f.userId;
+      const otherUser = await ctx.db
+        .query("users")
+        .withIndex("by_userId", (q) => q.eq("userId", otherUserId))
+        .first();
+
+      result.push({
+        id: String(f._id),
+        user_id: f.userId,
+        friend_id: f.friendId,
+        status: f.status,
+        friend_username: otherUser?.username || (otherUserId === "dev-user-id" ? "dev_user" : `user_${otherUserId.slice(-6)}`),
+        friend_display_name: otherUser?.displayName || otherUser?.username || "Developer",
+        friend_avatar_url: otherUser?.avatarUrl || null,
+        created_at: f._creationTime,
+      });
+    }
+
+    return result;
+  },
+});
