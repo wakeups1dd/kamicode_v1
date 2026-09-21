@@ -9,6 +9,7 @@ import type {
   LeaderboardEntry,
   BadgeResponse,
   UserBadgeResponse,
+  UserProfileResponse,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -304,3 +305,10 @@ export async function sendArenaInvite(targetUserId: string, roomCode: string): P
 export async function getArenaInvites(): Promise<{room_code: string, sender_id: string, sender_name: string}[]> {
   return apiFetch<{room_code: string, sender_id: string, sender_name: string}[]>("/api/arena/invites");
 }
+
+// ---------- Users ----------
+
+export async function getUserProfile(username: string): Promise<UserProfileResponse> {
+  return apiFetch<UserProfileResponse>(`/api/users/profile/${encodeURIComponent(username)}`);
+}
+

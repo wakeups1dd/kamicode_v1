@@ -25,6 +25,7 @@ from routers import (
     arena,
     badges,
     friends,
+    users,
 )
 
 # Configure structured logging
@@ -104,6 +105,7 @@ app.include_router(streaks.router)
 app.include_router(arena.router)
 app.include_router(badges.router)
 app.include_router(friends.router)
+app.include_router(users.router)
 
 
 @app.get("/")

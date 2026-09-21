@@ -129,3 +129,15 @@ export interface UserBadgeResponse {
   badge: BadgeResponse;
   awarded_at?: string | number;
 }
+
+export interface UserProfileResponse {
+  user_id: string;
+  username: string;
+  display_name: string;
+  avatar_url?: string;
+  created_at?: string | number;
+  streak: UserStreakResponse;
+  submissions: SubmissionResponse[];
+  badges: UserBadgeResponse[];
+}
+

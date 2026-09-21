@@ -5,26 +5,37 @@ import { getAllBadges, getMyBadges } from "@/lib/api";
 import type { BadgeResponse, UserBadgeResponse } from "@/lib/types";
 import { Award, Flame, Trophy, Star, Crown, Swords } from "lucide-react";
 
-export function TrophyCabinet() {
+interface TrophyCabinetProps {
+  userBadges?: UserBadgeResponse[];
+  title?: string;
+}
+
+export function TrophyCabinet({ userBadges, title }: TrophyCabinetProps = {}) {
   const [allBadges, setAllBadges] = useState<BadgeResponse[]>([]);
-  const [myBadges, setMyBadges] = useState<UserBadgeResponse[]>([]);
+  const [myBadges, setMyBadges] = useState<UserBadgeResponse[]>(userBadges || []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadBadges() {
       try {
-        const [all, mine] = await Promise.all([
-          getAllBadges().catch(() => []),
-          getMyBadges().catch(() => [])
-        ]);
-        setAllBadges(all);
-        setMyBadges(mine);
+        if (userBadges !== undefined) {
+          const all = await getAllBadges().catch(() => []);
+          setAllBadges(all);
+          setMyBadges(userBadges);
+        } else {
+          const [all, mine] = await Promise.all([
+            getAllBadges().catch(() => []),
+            getMyBadges().catch(() => [])
+          ]);
+          setAllBadges(all);
+          setMyBadges(mine);
+        }
       } finally {
         setLoading(false);
       }
     }
     loadBadges();
-  }, []);
+  }, [userBadges]);
 
   if (loading) {
     return <div className="animate-pulse h-32 bg-zinc-100 dark:bg-zinc-800 rounded-xl border-4 border-black shadow-[4px_4px_0px_#000]" />;
@@ -48,7 +59,7 @@ export function TrophyCabinet() {
     <div className="border-4 border-black p-6 rounded-xl bg-secondary-background shadow-[4px_4px_0px_#000] select-none">
       <div className="flex items-center gap-2 mb-6">
         <Award className="w-5 h-5 text-main fill-current" />
-        <h3 className="font-mono font-black text-xs uppercase tracking-wider text-zinc-500">Trophy Cabinet</h3>
+        <h3 className="font-mono font-black text-xs uppercase tracking-wider text-zinc-500">{title || "Trophy Cabinet"}</h3>
       </div>
       
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">

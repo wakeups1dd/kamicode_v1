@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 import {
   UserPlus,
+  User,
   Check,
   Clock,
   Users,
@@ -315,27 +316,31 @@ export default function FriendsPage() {
                         key={f.id}
                         className="bg-background border-2 border-black rounded-xl p-3 flex items-center justify-between gap-2 shadow-[2px_2px_0px_#000]"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <Link
+                          href={`/profile?username=${f.friend_username}`}
+                          className="flex items-center gap-2.5 min-w-0 group cursor-pointer"
+                          title={`View @${f.friend_username}'s profile`}
+                        >
                           {f.friend_avatar_url ? (
                             <img
                               src={f.friend_avatar_url}
                               alt={f.friend_username}
-                              className="w-9 h-9 rounded-lg border border-black object-cover flex-shrink-0"
+                              className="w-9 h-9 rounded-lg border border-black object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-lg bg-[#a855f7] border border-black flex items-center justify-center text-xs font-black text-white flex-shrink-0">
+                            <div className="w-9 h-9 rounded-lg bg-[#a855f7] border border-black flex items-center justify-center text-xs font-black text-white flex-shrink-0 group-hover:scale-105 transition-transform">
                               {f.friend_username.charAt(0).toUpperCase()}
                             </div>
                           )}
                           <div className="min-w-0">
-                            <div className="font-black text-xs truncate">
+                            <div className="font-black text-xs truncate group-hover:text-main transition-colors">
                               {f.friend_display_name || f.friend_username}
                             </div>
                             <div className="font-mono text-[10px] text-muted-foreground truncate">
                               @{f.friend_username}
                             </div>
                           </div>
-                        </div>
+                        </Link>
 
                         {/* Accept & Reject Action Buttons */}
                         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -435,46 +440,60 @@ export default function FriendsPage() {
                     key={f.id}
                     className="bg-background border-3 border-black rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-[3px_3px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000] transition-all"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <Link
+                      href={`/profile?username=${f.friend_username}`}
+                      className="flex items-center gap-3 min-w-0 group cursor-pointer"
+                      title={`View @${f.friend_username}'s profile`}
+                    >
                       {f.friend_avatar_url ? (
                         <img
                           src={f.friend_avatar_url}
                           alt={f.friend_username}
-                          className="w-12 h-12 rounded-xl border-2 border-black object-cover flex-shrink-0"
+                          className="w-12 h-12 rounded-xl border-2 border-black object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-xl bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0">
+                        <div className="w-12 h-12 rounded-xl bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 group-hover:scale-105 transition-transform">
                           {f.friend_username.charAt(0).toUpperCase()}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="font-black text-sm truncate text-foreground">
+                        <div className="font-black text-sm truncate text-foreground group-hover:text-main transition-colors">
                           {f.friend_display_name || f.friend_username}
                         </div>
                         <div className="font-mono text-xs text-muted-foreground truncate">
                           @{f.friend_username}
                         </div>
                       </div>
-                    </div>
+                    </Link>
 
-                    <div className="pt-2 border-t border-black/15 flex items-center justify-between">
+                    <div className="pt-2 border-t border-black/15 flex items-center justify-between gap-2">
                       <span className="text-[10px] font-mono text-muted-foreground font-bold flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-[#8bd600] inline-block" />
-                        <span>Connected</span>
+                        <span className="hidden sm:inline">Connected</span>
                       </span>
-                      <button
-                        onClick={() =>
-                          handleChallenge(
-                            f.user_id === myId ? f.friend_id : f.user_id,
-                            f.friend_username
-                          )
-                        }
-                        className="bg-main text-main-foreground px-3 py-1.5 rounded-lg border-2 border-black font-black text-xs shadow-[1.5px_1.5px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center gap-1.5 cursor-pointer"
-                        title="Challenge to 1v1 Arena duel"
-                      >
-                        <Swords className="w-3.5 h-3.5" />
-                        <span>Challenge</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/profile?username=${f.friend_username}`}
+                          className="bg-secondary-background hover:bg-zinc-200 dark:hover:bg-zinc-800 text-foreground px-2.5 py-1.5 rounded-lg border-2 border-black font-black text-xs shadow-[1.5px_1.5px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center gap-1.5 cursor-pointer"
+                          title="View developer profile"
+                        >
+                          <User className="w-3.5 h-3.5 text-main" />
+                          <span>Profile</span>
+                        </Link>
+                        <button
+                          onClick={() =>
+                            handleChallenge(
+                              f.user_id === myId ? f.friend_id : f.user_id,
+                              f.friend_username
+                            )
+                          }
+                          className="bg-main text-main-foreground px-2.5 py-1.5 rounded-lg border-2 border-black font-black text-xs shadow-[1.5px_1.5px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center gap-1.5 cursor-pointer"
+                          title="Challenge to 1v1 Arena duel"
+                        >
+                          <Swords className="w-3.5 h-3.5" />
+                          <span>Challenge</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

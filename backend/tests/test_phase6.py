@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from main import app
 from arena_state import arena_manager
+from database import get_convex
 
 
 # ─── 1. Anti-Cheat Telemetry Verification ───────────────────────────────
@@ -75,3 +76,89 @@ def test_github_actions_workflow_syntax():
     assert "jobs" in data
     assert "backend-tests" in data["jobs"]
     assert "frontend-build" in data["jobs"]
+
+
+# ─── 3. User Profile Endpoint Verification ─────────────────────────────
+
+def test_get_user_profile_success():
+    """Verify GET /api/users/profile/{username} returns user stats, streak, badges, and submissions."""
+    mock_convex = MagicMock()
+    
+    def mock_query(name, args=None):
+        if name == "users:getByUsername":
+            if args and args.get("username") == "alice":
+                return {
+                    "_id": "user_doc_1",
+                    "userId": "user_alice_123",
+                    "username": "alice",
+                    "displayName": "Alice Smith",
+                    "avatarUrl": "https://example.com/alice.png",
+                    "_creationTime": 1718000000000,
+                }
+            return None
+        elif name == "streaks:getByUserId":
+            return {
+                "userId": "user_alice_123",
+                "currentStreak": 7,
+                "longestStreak": 14,
+                "totalSolves": 25,
+                "lastSolveDate": "2026-09-21",
+            }
+        elif name == "submissions:listByUser":
+            return [{
+                "_id": "sub_1",
+                "problemId": "prob_1",
+                "language": "python",
+                "status": "accepted",
+                "runtimeMs": 42,
+                "passedCount": 5,
+                "totalCount": 5,
+                "_creationTime": 1718000000000,
+            }]
+        elif name == "badges:listForUser":
+            return [{
+                "_id": "b_1",
+                "name": "Speed Demon",
+                "description": "Solved in < 50ms",
+                "iconName": "Flame",
+                "conditionType": "fast_solve",
+                "conditionValue": 1,
+                "awardedAt": 1718000000000,
+            }]
+        return []
+
+    mock_convex.query.side_effect = mock_query
+
+    app.dependency_overrides[get_convex] = lambda: mock_convex
+    try:
+        client = TestClient(app)
+        res = client.get("/api/users/profile/alice")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["username"] == "alice"
+        assert data["display_name"] == "Alice Smith"
+        assert data["avatar_url"] == "https://example.com/alice.png"
+        assert data["streak"]["current_streak"] == 7
+        assert data["streak"]["total_solves"] == 25
+        assert len(data["submissions"]) == 1
+        assert data["submissions"][0]["status"] == "accepted"
+        assert len(data["badges"]) == 1
+        assert data["badges"][0]["badge"]["name"] == "Speed Demon"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_user_profile_not_found():
+    """Verify GET /api/users/profile/{username} returns 404 for non-existent users."""
+    mock_convex = MagicMock()
+    mock_convex.query.return_value = None
+
+    app.dependency_overrides[get_convex] = lambda: mock_convex
+    try:
+        client = TestClient(app)
+        res = client.get("/api/users/profile/nonexistent_coder_xyz")
+        assert res.status_code == 404
+        assert res.json()["detail"] == "User not found"
+    finally:
+        app.dependency_overrides.clear()
+
