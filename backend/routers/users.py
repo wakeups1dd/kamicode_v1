@@ -54,12 +54,18 @@ def get_user_profile(
             "awarded_at": b.get("awardedAt") or b.get("_creationTime"),
         })
 
+    from presence import presence_manager
+    is_online = presence_manager.is_online(user_id)
+    last_seen = presence_manager.get_last_seen(user_id)
+
     return {
         "user_id": user_id,
         "username": user.get("username"),
         "display_name": user.get("displayName") or user.get("username"),
         "avatar_url": user.get("avatarUrl"),
         "created_at": user.get("_creationTime"),
+        "is_online": is_online,
+        "last_seen": last_seen,
         "streak": {
             "user_id": user_id,
             "current_streak": streak.get("currentStreak", 0),
@@ -70,3 +76,28 @@ def get_user_profile(
         "submissions": formatted_subs,
         "badges": formatted_badges,
     }
+
+
+@router.post("/heartbeat")
+def record_heartbeat(
+    current_user: dict = Depends(get_current_user),
+):
+    """Record heartbeat ping to maintain online presence."""
+    if not current_user or not current_user.get("id"):
+        return {"status": "ignored", "is_online": False}
+    from presence import presence_manager
+    presence_manager.record_activity(current_user["id"])
+    return {"status": "ok", "is_online": True}
+
+
+@router.post("/offline")
+def set_user_offline(
+    current_user: dict = Depends(get_current_user),
+):
+    """Explicitly mark user offline upon tab close or sign-out."""
+    if not current_user or not current_user.get("id"):
+        return {"status": "ignored", "is_online": False}
+    from presence import presence_manager
+    presence_manager.set_offline(current_user["id"])
+    return {"status": "ok", "is_online": False}
+

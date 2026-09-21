@@ -69,6 +69,11 @@ class ArenaState:
 
     def record_ping(self, user_id: str):
         """Record heartbeat from user."""
+        try:
+            from presence import presence_manager
+            presence_manager.record_activity(user_id)
+        except Exception:
+            pass
         match_id = self.user_to_match.get(user_id)
         if match_id and match_id in self.active_matches:
             players = self.active_matches[match_id]["players"]

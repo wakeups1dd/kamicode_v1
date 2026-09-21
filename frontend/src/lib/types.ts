@@ -136,6 +136,8 @@ export interface UserProfileResponse {
   display_name: string;
   avatar_url?: string;
   created_at?: string | number;
+  is_online?: boolean;
+  last_seen?: number;
   streak: UserStreakResponse;
   submissions: SubmissionResponse[];
   badges: UserBadgeResponse[];

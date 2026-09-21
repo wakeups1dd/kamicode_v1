@@ -1,11 +1,13 @@
-"use client";
-
 import {
   createContext,
   useContext,
+  useEffect,
   type ReactNode,
 } from "react";
 import { useUser, useAuth as useClerkAuth, useClerk } from "@clerk/nextjs";
+import { sendHeartbeat, sendOffline, sendOfflineBeacon } from "@/lib/api";
+
+const isBypass = process.env.NEXT_PUBLIC_BYPASS_AUTH === "true";
 
 /* ─── Types ─────────────────────────────────────────── */
 
@@ -32,6 +34,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loading = !isLoaded;
 
+  // Active user presence heartbeat & lifecycle
+  useEffect(() => {
+    if (!isSignedIn && !isBypass) return;
+
+    // Send initial heartbeat
+    sendHeartbeat().catch(() => {});
+
+    // Periodic heartbeat every 25 seconds
+    const interval = setInterval(() => {
+      sendHeartbeat().catch(() => {});
+    }, 25000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        sendHeartbeat().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const handleUnload = () => {
+      sendOfflineBeacon();
+    };
+    window.addEventListener("beforeunload", handleUnload);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleUnload);
+    };
+  }, [isSignedIn]);
+
   const signUp = async () => {
     if (typeof window !== "undefined") window.location.href = "/auth?mode=signup";
     return { error: null };
@@ -50,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: isSignedIn ? user : null,
+        user: isSignedIn ? user : (isBypass ? { id: "dev-user-id", username: "dev_user" } : null),
         session: sessionId ? { access_token: sessionId } : null,
         loading,
         signUp,
@@ -58,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithGithub,
         signInWithGoogle,
         signOut: async () => {
+          sendOffline().catch(() => {});
           await signOut();
           if (typeof window !== "undefined") {
             window.location.href = "/";

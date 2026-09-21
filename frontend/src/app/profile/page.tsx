@@ -288,9 +288,17 @@ export function ProfileContent({ initialUsername }: { initialUsername?: string }
                   </Link>
                   <span>/</span>
                   <span className="text-foreground font-black">@{displayUsername}</span>
-                  <span className="text-[9px] px-2 py-0.5 rounded-xl border-2 border-black bg-main text-main-foreground font-black uppercase tracking-wider">
-                    Friend Profile
-                  </span>
+                  {otherProfile?.is_online ? (
+                    <span className="text-[9px] px-2 py-0.5 rounded-xl border-2 border-black bg-[#8bd600] text-black font-black uppercase tracking-wider flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-black inline-block animate-ping" />
+                      <span>Online</span>
+                    </span>
+                  ) : (
+                    <span className="text-[9px] px-2 py-0.5 rounded-xl border-2 border-black bg-zinc-200 dark:bg-zinc-800 text-muted-foreground font-black uppercase tracking-wider flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 inline-block" />
+                      <span>Offline</span>
+                    </span>
+                  )}
                 </>
               ) : (
                 <>
@@ -367,17 +375,29 @@ export function ProfileContent({ initialUsername }: { initialUsername?: string }
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main User Card */}
           <div className="bg-secondary-background border-4 border-black p-6 rounded-xl shadow-[4px_4px_0px_#000] flex flex-col items-center justify-center text-center gap-4 select-none">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={displayUsername}
-                className="w-20 h-20 rounded-full border-4 border-black shadow-[3px_3px_0px_#000] object-cover"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full border-4 border-black bg-purple-300 dark:bg-purple-700 flex items-center justify-center font-mono font-black text-3xl text-black shadow-[3px_3px_0px_#000]">
-                {avatarInit}
-              </div>
-            )}
+            <div className="relative">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayUsername}
+                  className="w-20 h-20 rounded-full border-4 border-black shadow-[3px_3px_0px_#000] object-cover"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full border-4 border-black bg-purple-300 dark:bg-purple-700 flex items-center justify-center font-mono font-black text-3xl text-black shadow-[3px_3px_0px_#000]">
+                  {avatarInit}
+                </div>
+              )}
+              <span
+                className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-black flex items-center justify-center ${
+                  (!isOtherUser || otherProfile?.is_online) ? "bg-[#8bd600]" : "bg-zinc-400 dark:bg-zinc-600"
+                }`}
+                title={(!isOtherUser || otherProfile?.is_online) ? "Online" : "Offline"}
+              >
+                {(!isOtherUser || otherProfile?.is_online) && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8bd600] opacity-75" />
+                )}
+              </span>
+            </div>
 
             <div>
               <h2 className="text-xl font-black text-foreground">{displayName}</h2>
@@ -386,17 +406,39 @@ export function ProfileContent({ initialUsername }: { initialUsername?: string }
 
             <div className="w-full border-t border-black pt-3 flex flex-col gap-1.5 font-mono text-[10px] text-zinc-500 font-bold">
               {!isOtherUser ? (
-                <div className="flex justify-between">
-                  <span>Account Email:</span>
-                  <span className="text-foreground truncate max-w-[150px]">{email || "N/A"}</span>
-                </div>
+                <>
+                  <div className="flex justify-between items-center">
+                    <span>Status:</span>
+                    <span className="text-[#8bd600] font-black flex items-center gap-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8bd600] opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8bd600]" />
+                      </span>
+                      <span>Online</span>
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Account Email:</span>
+                    <span className="text-foreground truncate max-w-[150px]">{email || "N/A"}</span>
+                  </div>
+                </>
               ) : (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Status:</span>
-                  <span className="text-[#8bd600] font-black flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-[#8bd600] inline-block" />
-                    Connected Friend
-                  </span>
+                  {otherProfile?.is_online ? (
+                    <span className="text-[#8bd600] font-black flex items-center gap-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8bd600] opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8bd600]" />
+                      </span>
+                      <span>Online</span>
+                    </span>
+                  ) : (
+                    <span className="text-zinc-400 dark:text-zinc-500 font-black flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-zinc-400 dark:bg-zinc-600 inline-block" />
+                      <span>Offline</span>
+                    </span>
+                  )}
                 </div>
               )}
               <div className="flex justify-between">

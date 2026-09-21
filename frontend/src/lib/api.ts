@@ -270,6 +270,8 @@ export interface FriendshipResponse {
   friend_username: string;
   friend_display_name: string | null;
   friend_avatar_url: string | null;
+  is_online?: boolean;
+  last_seen?: number;
 }
 
 export async function getFriends(): Promise<FriendshipResponse[]> {
@@ -310,5 +312,29 @@ export async function getArenaInvites(): Promise<{room_code: string, sender_id: 
 
 export async function getUserProfile(username: string): Promise<UserProfileResponse> {
   return apiFetch<UserProfileResponse>(`/api/users/profile/${encodeURIComponent(username)}`);
+}
+
+export async function sendHeartbeat(): Promise<{ status: string; is_online: boolean }> {
+  return apiFetch<{ status: string; is_online: boolean }>("/api/users/heartbeat", {
+    method: "POST",
+  });
+}
+
+export async function sendOffline(): Promise<void> {
+  return apiFetch<void>("/api/users/offline", {
+    method: "POST",
+  });
+}
+
+export function sendOfflineBeacon(): void {
+  if (typeof window === "undefined") return;
+  const token = isBypass ? getMockToken() : undefined;
+  try {
+    fetch(`${API_BASE}/api/users/offline`, {
+      method: "POST",
+      headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      keepalive: true,
+    }).catch(() => {});
+  } catch {}
 }
 

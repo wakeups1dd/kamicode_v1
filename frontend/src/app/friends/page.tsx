@@ -36,14 +36,15 @@ export default function FriendsPage() {
   const [requestTab, setRequestTab] = useState<"incoming" | "outgoing">("incoming");
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
 
-  const fetchFriends = async () => {
+  const fetchFriends = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await getFriends();
       setFriendships(data || []);
     } catch (err: any) {
-      setError(err.message || "Failed to load friends");
+      if (showLoading) setError(err.message || "Failed to load friends");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -54,6 +55,13 @@ export default function FriendsPage() {
       return;
     }
     fetchFriends();
+
+    // Auto-refresh presence every 12 seconds so online/offline changes reflect dynamically
+    const interval = setInterval(() => {
+      fetchFriends(false);
+    }, 12000);
+
+    return () => clearInterval(interval);
   }, [authLoading, user]);
 
   const handleSendRequest = async (e: React.FormEvent) => {
@@ -321,17 +329,25 @@ export default function FriendsPage() {
                           className="flex items-center gap-2.5 min-w-0 group cursor-pointer"
                           title={`View @${f.friend_username}'s profile`}
                         >
-                          {f.friend_avatar_url ? (
-                            <img
-                              src={f.friend_avatar_url}
-                              alt={f.friend_username}
-                              className="w-9 h-9 rounded-lg border border-black object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
+                          <div className="relative flex-shrink-0">
+                            {f.friend_avatar_url ? (
+                              <img
+                                src={f.friend_avatar_url}
+                                alt={f.friend_username}
+                                className="w-9 h-9 rounded-lg border border-black object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg bg-[#a855f7] border border-black flex items-center justify-center text-xs font-black text-white flex-shrink-0 group-hover:scale-105 transition-transform">
+                                {f.friend_username.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span
+                              className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-black ${
+                                f.is_online ? "bg-[#8bd600]" : "bg-zinc-400 dark:bg-zinc-600"
+                              }`}
+                              title={f.is_online ? "Online" : "Offline"}
                             />
-                          ) : (
-                            <div className="w-9 h-9 rounded-lg bg-[#a855f7] border border-black flex items-center justify-center text-xs font-black text-white flex-shrink-0 group-hover:scale-105 transition-transform">
-                              {f.friend_username.charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                          </div>
                           <div className="min-w-0">
                             <div className="font-black text-xs truncate group-hover:text-main transition-colors">
                               {f.friend_display_name || f.friend_username}
@@ -445,17 +461,25 @@ export default function FriendsPage() {
                       className="flex items-center gap-3 min-w-0 group cursor-pointer"
                       title={`View @${f.friend_username}'s profile`}
                     >
-                      {f.friend_avatar_url ? (
-                        <img
-                          src={f.friend_avatar_url}
-                          alt={f.friend_username}
-                          className="w-12 h-12 rounded-xl border-2 border-black object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
+                      <div className="relative flex-shrink-0">
+                        {f.friend_avatar_url ? (
+                          <img
+                            src={f.friend_avatar_url}
+                            alt={f.friend_username}
+                            className="w-12 h-12 rounded-xl border-2 border-black object-cover group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground group-hover:scale-105 transition-transform">
+                            {f.friend_username.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span
+                          className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black ${
+                            f.is_online ? "bg-[#8bd600]" : "bg-zinc-400 dark:bg-zinc-600"
+                          }`}
+                          title={f.is_online ? "Online" : "Offline"}
                         />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-main border-2 border-black flex items-center justify-center text-lg font-black text-main-foreground flex-shrink-0 group-hover:scale-105 transition-transform">
-                          {f.friend_username.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      </div>
                       <div className="min-w-0 flex-1">
                         <div className="font-black text-sm truncate text-foreground group-hover:text-main transition-colors">
                           {f.friend_display_name || f.friend_username}
@@ -467,10 +491,22 @@ export default function FriendsPage() {
                     </Link>
 
                     <div className="pt-2 border-t border-black/15 flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-mono text-muted-foreground font-bold flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-[#8bd600] inline-block" />
-                        <span className="hidden sm:inline">Connected</span>
-                      </span>
+                      <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold">
+                        {f.is_online ? (
+                          <span className="inline-flex items-center gap-1.5 text-[#8bd600]" title="User is currently online">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8bd600] opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8bd600]" />
+                            </span>
+                            <span>Online</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-zinc-400 dark:text-zinc-500" title="User is currently offline">
+                            <span className="w-2 h-2 rounded-full bg-zinc-400 dark:bg-zinc-600 inline-block" />
+                            <span>Offline</span>
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/profile?username=${f.friend_username}`}

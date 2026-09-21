@@ -134,6 +134,11 @@ async def get_current_user(
     """
     if not user_id:
         return None
+    try:
+        from presence import presence_manager
+        presence_manager.record_activity(user_id)
+    except Exception:
+        pass
     return {"id": user_id}
 
 

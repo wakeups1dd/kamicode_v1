@@ -261,6 +261,8 @@ class FriendshipResponse(BaseModel):
     friend_display_name: Optional[str] = None
     friend_avatar_url: Optional[str] = None
     created_at: Optional[Any] = None
+    is_online: bool = False
+    last_seen: Optional[int] = None
 
     model_config = {"from_attributes": True}
 
