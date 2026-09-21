@@ -367,7 +367,7 @@ def list_my_submissions(
     current_user: dict = Depends(get_required_user),
 ):
     """List all submissions of the current user."""
-    subs = client.query("submissions:listByUser", {"userId": current_user["id"]})
+    subs = client.query("submissions:listByUser", {"userId": current_user["id"]}) or []
     for s in subs:
         s["id"] = str(s["_id"])
         s["problem_id"] = str(s["problemId"])
@@ -375,6 +375,7 @@ def list_my_submissions(
         s["total_count"] = s.get("totalCount", 0)
         s["runtime_ms"] = s.get("runtimeMs")
         s["created_at"] = s.get("_creationTime")
+    subs.sort(key=lambda s: s.get("_creationTime") or 0, reverse=True)
     return subs
 
 
