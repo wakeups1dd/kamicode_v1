@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { listProblems, getMyStreak, listMySubmissions } from "@/lib/api";
 import type { ProblemSummary, SubmissionResponse, UserStreakResponse } from "@/lib/types";
@@ -25,10 +25,139 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
-  ArrowUpRight,
 } from "lucide-react";
 
-/* ── Helpers ────────────────────────────────────────────────── */
+/* ── Contribution Calendar Component ────────────────────────── */
+
+function ContributionCalendar({ submissions }: { submissions: SubmissionResponse[] }) {
+  const [tiles, setTiles] = useState<{ id: number; level: number; dateStr: string; count: number }[]>([]);
+  const [months, setMonths] = useState<{ label: string; colIndex: number }[]>([]);
+
+  useEffect(() => {
+    // Generate 371 grid tiles (53 weeks * 7 days)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    const generated: { id: number; level: number; dateStr: string; count: number }[] = [];
+    const monthLabels: { label: string; colIndex: number }[] = [];
+    
+    for (let i = 0; i < 371; i++) {
+      const d = new Date(today.getTime());
+      d.setDate(d.getDate() - (370 - i));
+      
+      const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      
+      if (d.getDate() === 1) {
+        const colIndex = Math.floor(i / 7);
+        monthLabels.push({ label: d.toLocaleDateString("en-US", { month: "short" }), colIndex });
+      }
+      
+      generated.push({ id: i, level: 0, count: 0, dateStr });
+    }
+    
+    // Fill in activity based on actual submission history
+    submissions.forEach(sub => {
+      if (!sub.created_at) return;
+      const subDate = new Date(sub.created_at);
+      const diffTime = today.getTime() - subDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays >= 0 && diffDays < 371) {
+        const tileIdx = 370 - diffDays;
+        if (tileIdx >= 0 && tileIdx < 371) {
+          generated[tileIdx].count += 1;
+          // Increment level, accepted solves count more
+          const increment = sub.status === "accepted" ? 2 : 1;
+          generated[tileIdx].level = Math.min(4, generated[tileIdx].level + increment);
+        }
+      }
+    });
+
+    setTiles(generated);
+    
+    // Filter months to avoid overlapping labels
+    const filteredMonths = monthLabels.filter((m, i, arr) => {
+      if (i === 0) return true;
+      return m.colIndex - arr[i-1].colIndex > 2; // At least 2 columns apart
+    });
+    setMonths(filteredMonths);
+  }, [submissions]);
+
+  // Purple theme levels
+  const levelColors = [
+    "bg-background border border-black/10 dark:border-black/30", // Level 0
+    "bg-[#ebd5ff] border border-black/20", // Level 1: Light Purple
+    "bg-[#d8b4fe] border border-black/40", // Level 2: Medium Purple
+    "bg-[#a855f7] border border-black/60", // Level 3: Main Purple
+    "bg-[#6b21a8] border border-black",    // Level 4: Dark Purple
+  ];
+
+  const totalSolvedInYear = new Set(
+    submissions.filter(s => s.status === "accepted").map(s => s.problem_id)
+  ).size;
+
+  return (
+    <div className="git-card p-5 animate-slide-up select-none overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-1">
+        <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span>Contributions & Solves</span>
+        </h3>
+        <span className="text-xs text-muted-foreground font-mono font-bold">
+          {totalSolvedInYear} unique solved challenges
+        </span>
+      </div>
+
+      <div className="flex flex-col overflow-x-auto py-1">
+        {/* Month Labels */}
+        <div className="relative h-4 w-full ml-[30px] mb-1 text-[10px] text-muted-foreground font-mono font-bold">
+          {months.map((m, idx) => (
+            <span key={idx} className="absolute" style={{ left: `${m.colIndex * 13}px` }}>
+              {m.label}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex gap-2 items-start justify-start w-max">
+          {/* Day-of-week indicators */}
+          <div className="grid grid-rows-7 gap-[3px] text-[9px] text-muted-foreground pt-[1px] pr-1 font-mono font-bold">
+            <span>Mon</span>
+            <span className="invisible">Tue</span>
+            <span>Wed</span>
+            <span className="invisible">Thu</span>
+            <span>Fri</span>
+            <span className="invisible">Sat</span>
+            <span className="invisible">Sun</span>
+          </div>
+
+          {/* 53 Columns of 7 Rows */}
+          <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
+            {tiles.map((tile) => (
+              <div
+                key={tile.id}
+                className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-150 hover:ring-2 hover:ring-black hover:z-10 cursor-pointer ${levelColors[tile.level]}`}
+                title={tile.count > 0 ? `${tile.count} submissions on ${tile.dateStr}` : `No activity on ${tile.dateStr}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Calendar Legend */}
+      <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground mt-3 font-mono font-bold">
+        <span>Less</span>
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-background border border-black/20" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ebd5ff] border border-black/20" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#d8b4fe] border border-black/40" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#a855f7] border border-black/60" />
+        <span className="w-2.5 h-2.5 rounded-[1px] bg-[#6b21a8] border border-black" />
+        <span>More</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Git Timeline Component ────────────────────────────────── */
 
 function formatRelativeTime(dateInput?: string | number | null): string {
   if (!dateInput) return "Recently";
@@ -45,357 +174,6 @@ function formatRelativeTime(dateInput?: string | number | null): string {
   if (days === 1) return "Yesterday";
   if (days < 30) return `${days}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-/* ── Contribution Calendar Component ────────────────────────── */
-
-function ContributionCalendar({
-  submissions,
-  problemMap,
-}: {
-  submissions: SubmissionResponse[];
-  problemMap: Record<string, ProblemSummary>;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [range, setRange] = useState<"3m" | "6m" | "1y">("6m");
-  const [tiles, setTiles] = useState<{
-    id: number;
-    level: number;
-    dateStr: string;
-    count: number;
-    isFuture: boolean;
-    isToday: boolean;
-  }[]>([]);
-  const [months, setMonths] = useState<{ label: string; colIndex: number }[]>([]);
-  const [numCols, setNumCols] = useState(26);
-
-  // Accepted submissions sorted newest first
-  const acceptedSubs = [...submissions]
-    .filter((s) => s.status === "accepted")
-    .sort((a, b) => {
-      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return tB - tA;
-    });
-
-  const latestSolves = acceptedSubs.slice(0, 4);
-
-  // Unique problems solved
-  const totalSolvedUnique = new Set(
-    acceptedSubs.map((s) => String(s.problem_id || (s as any).problemId || ""))
-  ).size;
-
-  useEffect(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const dayOfWeek = today.getDay(); // 0 = Sun, 1 = Mon...
-    const mondayOffset = (dayOfWeek + 6) % 7; // Mon = 0, ..., Sun = 6
-
-    const weeks = range === "3m" ? 14 : range === "6m" ? 26 : 52;
-    setNumCols(weeks);
-
-    // Calculate start date: Monday of the earliest week in this range
-    const startDate = new Date(today.getTime());
-    startDate.setDate(today.getDate() - mondayOffset - (weeks - 1) * 7);
-    startDate.setHours(0, 0, 0, 0);
-
-    // Build a map of YYYY-MM-DD -> { count, accepted } from user submissions
-    const activityMap: Record<string, { count: number; accepted: number }> = {};
-    submissions.forEach((sub) => {
-      if (!sub.created_at) return;
-      const subDate = new Date(sub.created_at);
-      const key = `${subDate.getFullYear()}-${String(subDate.getMonth() + 1).padStart(2, "0")}-${String(subDate.getDate()).padStart(2, "0")}`;
-      if (!activityMap[key]) {
-        activityMap[key] = { count: 0, accepted: 0 };
-      }
-      activityMap[key].count += 1;
-      if (sub.status === "accepted") {
-        activityMap[key].accepted += 1;
-      }
-    });
-
-    const generatedTiles: {
-      id: number;
-      level: number;
-      dateStr: string;
-      count: number;
-      isFuture: boolean;
-      isToday: boolean;
-    }[] = [];
-    const monthLabels: { label: string; colIndex: number }[] = [];
-
-    const totalDays = weeks * 7;
-    for (let i = 0; i < totalDays; i++) {
-      const d = new Date(startDate.getTime());
-      d.setDate(startDate.getDate() + i);
-
-      const isToday = d.getTime() === today.getTime();
-      const isFuture = d.getTime() > today.getTime();
-
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const activity = activityMap[key] || { count: 0, accepted: 0 };
-
-      // Calculate level (0-4)
-      let level = 0;
-      if (!isFuture && activity.count > 0) {
-        const score = activity.count + activity.accepted;
-        if (score >= 5) level = 4;
-        else if (score >= 3) level = 3;
-        else if (score >= 2) level = 2;
-        else level = 1;
-      }
-
-      const dateStr = d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-
-      // Track month labels: record on 1st of the month or 1st column
-      const colIndex = Math.floor(i / 7);
-      if (d.getDate() === 1 && !isFuture) {
-        monthLabels.push({
-          label: d.toLocaleDateString("en-US", { month: "short" }),
-          colIndex,
-        });
-      }
-
-      generatedTiles.push({
-        id: i,
-        level,
-        dateStr,
-        count: activity.count,
-        isFuture,
-        isToday,
-      });
-    }
-
-    setTiles(generatedTiles);
-
-    if (monthLabels.length === 0) {
-      monthLabels.push({
-        label: startDate.toLocaleDateString("en-US", { month: "short" }),
-        colIndex: 0,
-      });
-    }
-
-    // Filter month labels so they don't overlap (at least 3 columns apart)
-    const filteredMonths = monthLabels.filter((m, i, arr) => {
-      if (i === 0) return true;
-      return m.colIndex - arr[i - 1].colIndex >= 3;
-    });
-    setMonths(filteredMonths);
-  }, [submissions, range]);
-
-  // Auto-scroll to the right so today & latest solves are instantly visible
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
-    }
-  }, [range, tiles]);
-
-  // Purple theme levels
-  const levelColors = [
-    "bg-background border border-black/10 dark:border-black/30", // Level 0
-    "bg-[#ebd5ff] border border-black/20", // Level 1: Light Purple
-    "bg-[#d8b4fe] border border-black/40", // Level 2: Medium Purple
-    "bg-[#a855f7] border border-black/60", // Level 3: Main Purple
-    "bg-[#6b21a8] border border-black",    // Level 4: Dark Purple
-  ];
-
-  return (
-    <div className="git-card p-5 animate-slide-up select-none overflow-hidden">
-      {/* Top Header: Title, Solved Count, and Range Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Calendar className="w-4 h-4 text-main" />
-          <h3 className="text-sm font-black text-foreground">Contributions &amp; Solves</h3>
-          <span className="text-[10px] font-mono font-bold bg-main text-main-foreground px-2 py-0.5 rounded-full border border-black shadow-[1px_1px_0px_#000]">
-            {totalSolvedUnique} Unique Solved
-          </span>
-        </div>
-
-        {/* Range Selector: 3M, 6M, 1Y */}
-        <div className="flex items-center gap-1 bg-background border-2 border-black p-0.5 rounded-lg shadow-[1px_1px_0px_#000] self-start sm:self-auto">
-          {(
-            [
-              { id: "3m", label: "3 Months" },
-              { id: "6m", label: "6 Months" },
-              { id: "1y", label: "1 Year" },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setRange(t.id)}
-              className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-black transition-all cursor-pointer ${
-                range === t.id
-                  ? "bg-main text-main-foreground border border-black shadow-[1px_1px_0px_#000]"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title={`View ${t.label}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Latest Solves Banner — Displays recent solves without any horizontal scrolling */}
-      <div className="bg-secondary-background border-2 border-black rounded-xl p-3 mb-4 shadow-[2px_2px_0px_#000]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-6 h-6 rounded-lg bg-[#8bd600] border-2 border-black flex items-center justify-center shadow-[1px_1px_0px_#000]">
-              <CheckCircle2 className="w-3.5 h-3.5 text-black" />
-            </div>
-            <span className="text-xs font-black text-foreground">Latest Solves</span>
-            <span className="text-[9px] font-mono font-bold text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-black">
-              {acceptedSubs.length} Accepted
-            </span>
-          </div>
-
-          {latestSolves.length > 0 ? (
-            <div className="flex items-center gap-2 flex-wrap">
-              {latestSolves.map((sub) => {
-                const prob =
-                  problemMap[String(sub.problem_id)] ||
-                  problemMap[String((sub as any).problemId)] ||
-                  problemMap[String((sub as any).problem_slug)];
-
-                const title =
-                  prob?.title ||
-                  (sub.problem_id ? `Problem #${String(sub.problem_id).slice(-6)}` : "Coding Challenge");
-                const slug = prob?.slug || "";
-                const timeAgo = formatRelativeTime(sub.created_at);
-                const diff = prob?.difficulty || "easy";
-
-                return (
-                  <Link
-                    key={sub.id}
-                    href={slug ? `/problems/${slug}` : "/problems"}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-background hover:bg-main hover:text-main-foreground border-2 border-black rounded-lg text-xs font-bold transition-all shadow-[1.5px_1.5px_0px_#000] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] group"
-                    title={`Solved ${timeAgo} • Click to open in arena`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        diff === "easy"
-                          ? "bg-[#8bd600]"
-                          : diff === "medium"
-                          ? "bg-[#ffbf00]"
-                          : "bg-[#f85149]"
-                      }`}
-                    />
-                    <span className="truncate max-w-[130px] sm:max-w-[170px]">{title}</span>
-                    <span className="text-[9px] font-mono text-muted-foreground group-hover:text-main-foreground/80">
-                      {timeAgo}
-                    </span>
-                    <ArrowUpRight className="w-3 h-3 opacity-60 group-hover:opacity-100" />
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-xs font-mono text-muted-foreground flex items-center gap-2">
-              <span>No accepted solves recorded yet.</span>
-              <Link href="/problems" className="text-main font-bold hover:underline flex items-center gap-1">
-                <span>Explore challenges</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Heatmap Grid Section */}
-      <div
-        ref={scrollRef}
-        className="flex flex-col overflow-x-auto py-1 scroll-smooth select-none"
-      >
-        {/* Month Labels aligned to grid columns */}
-        <div
-          className="grid gap-[2.5px] text-[10px] text-muted-foreground font-mono font-bold mb-1.5 h-4 w-max"
-          style={{
-            gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))`,
-            marginLeft: "28px",
-          }}
-        >
-          {months.map((m) => {
-            const span = Math.min(3, numCols - m.colIndex);
-            return (
-              <span
-                key={`${m.label}-${m.colIndex}`}
-                className="truncate text-left pointer-events-none"
-                style={{
-                  gridColumnStart: m.colIndex + 1,
-                  gridColumnEnd: `span ${span}`,
-                }}
-              >
-                {m.label}
-              </span>
-            );
-          })}
-        </div>
-
-        <div className="flex gap-2 items-start justify-start w-max">
-          {/* Day-of-week indicators */}
-          <div className="grid grid-rows-7 gap-[2.5px] text-[9px] text-muted-foreground font-mono font-bold pt-[1px] w-5 text-right select-none">
-            <span className="h-2.5 sm:h-[11px] leading-none">Mon</span>
-            <span className="invisible h-2.5 sm:h-[11px] leading-none">Tue</span>
-            <span className="h-2.5 sm:h-[11px] leading-none">Wed</span>
-            <span className="invisible h-2.5 sm:h-[11px] leading-none">Thu</span>
-            <span className="h-2.5 sm:h-[11px] leading-none">Fri</span>
-            <span className="invisible h-2.5 sm:h-[11px] leading-none">Sat</span>
-            <span className="invisible h-2.5 sm:h-[11px] leading-none">Sun</span>
-          </div>
-
-          {/* Grid of Weeks (columns) x 7 Rows (days) */}
-          <div className="grid grid-flow-col grid-rows-7 gap-[2.5px]">
-            {tiles.map((tile) => {
-              if (tile.isFuture) {
-                return (
-                  <div
-                    key={tile.id}
-                    className="w-2.5 h-2.5 sm:w-[11px] sm:h-[11px] rounded-[2px] opacity-0 pointer-events-none"
-                  />
-                );
-              }
-
-              return (
-                <div
-                  key={tile.id}
-                  className={`w-2.5 h-2.5 sm:w-[11px] sm:h-[11px] rounded-[2px] transition-all hover:scale-150 hover:ring-2 hover:ring-black hover:z-10 cursor-pointer ${
-                    tile.isToday ? "ring-2 ring-main ring-offset-1" : ""
-                  } ${levelColors[tile.level]}`}
-                  title={
-                    tile.count > 0
-                      ? `${tile.count} submission${tile.count > 1 ? "s" : ""} on ${tile.dateStr}${tile.isToday ? " (Today)" : ""}`
-                      : `No activity on ${tile.dateStr}${tile.isToday ? " (Today)" : ""}`
-                  }
-                />
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer / Legend */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-3 pt-2.5 border-t border-black/10 text-[10px] font-mono font-bold text-muted-foreground">
-        <span>
-          Showing {range === "3m" ? "past 3 months" : range === "6m" ? "past 6 months" : "full year"}
-        </span>
-
-        <div className="flex items-center gap-1.5 self-end sm:self-auto">
-          <span>Less</span>
-          <span className="w-2.5 h-2.5 rounded-[1px] bg-background border border-black/20" />
-          <span className="w-2.5 h-2.5 rounded-[1px] bg-[#ebd5ff] border border-black/20" />
-          <span className="w-2.5 h-2.5 rounded-[1px] bg-[#d8b4fe] border border-black/40" />
-          <span className="w-2.5 h-2.5 rounded-[1px] bg-[#a855f7] border border-black/60" />
-          <span className="w-2.5 h-2.5 rounded-[1px] bg-[#6b21a8] border border-black" />
-          <span>More</span>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 interface TimelineProps {
@@ -654,13 +432,8 @@ function TopicLanguagesBar({
   const uniqueSolved = new Set<string>();
   acceptedSubs.forEach(s => uniqueSolved.add(String(s.problem_id)));
   
-  uniqueSolved.forEach((pid) => {
-    const prob = problems.find(
-      (p) =>
-        String(p.id) === String(pid) ||
-        String((p as any)._id) === String(pid) ||
-        String(p.slug) === String(pid)
-    );
+  uniqueSolved.forEach(pid => {
+    const prob = problems.find(p => String(p.id) === String(pid));
     if (prob) {
       solvedByTopic[prob.topic] = (solvedByTopic[prob.topic] || 0) + 1;
     }
@@ -935,7 +708,7 @@ export default function HomePage() {
           </div>
 
           {/* Contribution Calendar */}
-          <ContributionCalendar submissions={submissions} problemMap={problemMap} />
+          <ContributionCalendar submissions={submissions} />
 
           {/* Activity / Git timeline */}
           <GitTimeline submissions={submissions} problemMap={problemMap} />
