@@ -59,8 +59,12 @@ export default function CohortDetailPage({ params }: { params: Promise<{ slug: s
       setEditName(detail.name);
       setEditDesc(detail.description || "");
       setEditingCohort(false);
-      const lb = await getCohortLeaderboard(detail.id);
-      setLeaderboard(lb);
+      try {
+        const lb = await getCohortLeaderboard(detail.slug || detail.id);
+        setLeaderboard(lb || []);
+      } catch (e) {
+        setLeaderboard([]);
+      }
       
       try {
         const challenge = await getTodayChallenge(cohortSlug);

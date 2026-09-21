@@ -9,25 +9,49 @@ from convex import ConvexClient
 router = APIRouter(prefix="/api/badges", tags=["badges"])
 
 
-@router.get("/me")
+@router.get("/me", response_model=List[UserBadgeResponse])
 def get_my_badges(
     client: ConvexClient = Depends(get_convex),
     current_user: dict = Depends(get_required_user),
 ):
     """Get the current user's unlocked badges."""
     badges = client.query("badges:listForUser", {"userId": current_user["id"]})
+    result = []
     for b in badges:
-        b["id"] = str(b.get("_id"))
-    return badges
+        badge_obj = {
+            "id": str(b.get("_id") or b.get("id")),
+            "name": b.get("name", ""),
+            "description": b.get("description", ""),
+            "icon_name": b.get("iconName") or b.get("icon_name", "Award"),
+            "condition_type": b.get("conditionType") or b.get("condition_type", ""),
+            "condition_value": b.get("conditionValue") or b.get("condition_value", 0),
+            "created_at": b.get("_creationTime"),
+        }
+        result.append({
+            "id": str(b.get("_id") or b.get("id")),
+            "user_id": current_user["id"],
+            "badge": badge_obj,
+            "awarded_at": b.get("awardedAt") or b.get("_creationTime"),
+        })
+    return result
 
 
-@router.get("/all")
+@router.get("/all", response_model=List[BadgeResponse])
 def get_all_badges(client: ConvexClient = Depends(get_convex)):
     """Get all available badges."""
     badges = client.query("badges:list", {})
+    result = []
     for b in badges:
-        b["id"] = str(b.get("_id"))
-    return badges
+        result.append({
+            "id": str(b.get("_id") or b.get("id")),
+            "name": b.get("name", ""),
+            "description": b.get("description", ""),
+            "icon_name": b.get("iconName") or b.get("icon_name", "Award"),
+            "condition_type": b.get("conditionType") or b.get("condition_type", ""),
+            "condition_value": b.get("conditionValue") or b.get("condition_value", 0),
+            "created_at": b.get("_creationTime"),
+        })
+    return result
 
 
 def evaluate_badges(user_id: str, client: ConvexClient):

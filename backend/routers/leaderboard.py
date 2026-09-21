@@ -3,7 +3,7 @@ from typing import List
 
 from database import get_convex
 from schemas import LeaderboardEntry
-from auth import get_current_user
+from auth import get_current_user, get_required_user
 
 router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
 
@@ -17,8 +17,8 @@ def get_global_leaderboard(client = Depends(get_convex), current_user: dict = De
         leaderboard.append({
             "rank": rank,
             "user_id": r.get("userId"),
-            "username": r.get("username"),
-            "display_name": r.get("displayName"),
+            "username": r.get("username") or r.get("userId") or "Anonymous",
+            "display_name": r.get("displayName") or r.get("username") or "Developer",
             "avatar_url": r.get("avatarUrl"),
             "total_solves": r.get("totalSolves", 0),
             "current_streak": r.get("currentStreak", 0),
@@ -27,9 +27,14 @@ def get_global_leaderboard(client = Depends(get_convex), current_user: dict = De
     return leaderboard
 
 @router.get("/cohort/{slug}")
-def get_cohort_leaderboard(slug: str, client = Depends(get_convex), current_user: dict = Depends(get_current_user)):
+def get_cohort_leaderboard(slug: str, client = Depends(get_convex), current_user: dict = Depends(get_required_user)):
     """Get cohort-specific leaderboard rankings."""
     cohort = client.query("cohorts:getBySlug", {"slug": slug})
+    if not cohort:
+        try:
+            cohort = client.query("cohorts:getById", {"cohortId": slug})
+        except Exception:
+            cohort = None
     if not cohort:
         raise HTTPException(status_code=404, detail="Cohort not found")
         
@@ -45,8 +50,8 @@ def get_cohort_leaderboard(slug: str, client = Depends(get_convex), current_user
         leaderboard.append({
             "rank": rank,
             "user_id": r.get("userId"),
-            "username": r.get("username"),
-            "display_name": r.get("displayName"),
+            "username": r.get("username") or r.get("userId") or "Anonymous",
+            "display_name": r.get("displayName") or r.get("username") or "Developer",
             "avatar_url": r.get("avatarUrl"),
             "total_solves": r.get("totalSolves", 0),
             "current_streak": r.get("currentStreak", 0),

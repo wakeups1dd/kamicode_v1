@@ -182,10 +182,10 @@ class CohortResponse(CohortBase):
 
 class CohortMemberResponse(BaseModel):
     user_id: str
-    username: str
+    username: Optional[str] = "Anonymous"
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
-    role: str
+    role: str = "member"
     joined_at: Optional[Any] = None
 
 

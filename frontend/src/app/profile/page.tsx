@@ -9,7 +9,7 @@ import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { User, Zap, Code, ShieldAlert, Award, Calendar, ExternalLink, Activity, AwardIcon } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
   const [problemMap, setProblemMap] = useState<Record<string, ProblemSummary>>({});
   const [streak, setStreak] = useState<UserStreakResponse | null>(null);
@@ -17,6 +17,13 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     const fetchProfileData = async () => {
       setLoading(true);
       setError(null);
@@ -27,13 +34,15 @@ export default function ProfilePage() {
           getMyStreak().catch(() => null)
         ]);
 
-        setSubmissions(subsData);
+        setSubmissions(subsData || []);
         setStreak(streakData);
 
         const pMap: Record<string, ProblemSummary> = {};
-        problemsData.forEach((p) => {
-          pMap[String(p.id)] = p;
-        });
+        if (Array.isArray(problemsData)) {
+          problemsData.forEach((p) => {
+            pMap[String(p.id)] = p;
+          });
+        }
         setProblemMap(pMap);
       } catch (err: any) {
         setError(err.message || "Failed to load profile data.");
@@ -43,9 +52,9 @@ export default function ProfilePage() {
     };
 
     fetchProfileData();
-  }, []);
+  }, [authLoading, user]);
 
-  if (loading) {
+  if (authLoading || (loading && user)) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background select-none">
         <div className="flex flex-col items-center gap-3">

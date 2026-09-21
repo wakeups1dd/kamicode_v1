@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { getMyCohorts, createCohort, joinCohort } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import type { CohortResponse } from "@/lib/types";
-import { Users, Plus, Send } from "lucide-react";
+import { Users, Plus, Send, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function CohortsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   
   // States
@@ -29,7 +30,7 @@ export default function CohortsPage() {
     setError(null);
     try {
       const data = await getMyCohorts();
-      setCohorts(data);
+      setCohorts(data || []);
     } catch (err: any) {
       setError(err.message || "Failed to load cohorts.");
     } finally {
@@ -38,19 +39,30 @@ export default function CohortsPage() {
   };
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     loadCohorts();
-  }, []);
+  }, [authLoading, user]);
 
   // Create Cohort
   const handleCreateCohort = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cohortName.trim()) return;
+    if (!user) {
+      setFormError("Please sign in first to create a league.");
+      return;
+    }
+    const trimmedName = cohortName.trim();
+    if (!trimmedName) return;
     setFormLoading(true);
     setFormError(null);
     try {
+      const trimmedDesc = cohortDesc.trim();
       const newCohort = await createCohort({
-        name: cohortName,
-        description: cohortDesc || undefined
+        name: trimmedName,
+        description: trimmedDesc ? trimmedDesc : undefined
       });
       setCohortName("");
       setCohortDesc("");
@@ -65,11 +77,16 @@ export default function CohortsPage() {
   // Join Cohort
   const handleJoinCohort = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteCodeInput.trim()) return;
+    if (!user) {
+      setFormError("Please sign in first to join a league.");
+      return;
+    }
+    const code = inviteCodeInput.trim();
+    if (!code) return;
     setFormLoading(true);
     setFormError(null);
     try {
-      const joined = await joinCohort(inviteCodeInput);
+      const joined = await joinCohort(code);
       setInviteCodeInput("");
       router.push(`/cohorts/${joined.slug}`);
     } catch (err: any) {
@@ -114,9 +131,25 @@ export default function CohortsPage() {
               </span>
             </h2>
 
-            {loading ? (
+            {authLoading || (loading && user) ? (
               <div className="flex justify-center py-24 bg-secondary-background border-4 border-black rounded-2xl">
                 <div className="w-8 h-8 rounded-full border-4 border-transparent border-t-main animate-spin" />
+              </div>
+            ) : !user ? (
+              <div className="bg-secondary-background border-4 border-black p-10 rounded-2xl text-center space-y-4 shadow-[4px_4px_0px_#000] select-none">
+                <div className="text-3xl">🔐</div>
+                <h3 className="font-bold text-sm text-foreground">Sign in to participate in Coding Leagues</h3>
+                <p className="text-xs text-muted-foreground font-mono max-w-sm mx-auto leading-relaxed">
+                  Create or join private cohorts with classmates and teammates to compete on internal leaderboards.
+                </p>
+                <div className="pt-2">
+                  <Link
+                    href="/auth"
+                    className="inline-block px-5 py-2.5 rounded-xl bg-main text-main-foreground font-black text-xs border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                  >
+                    Sign In to KamiCode
+                  </Link>
+                </div>
               </div>
             ) : error ? (
               <div className="p-6 bg-red-500/10 border-2 border-black text-red-500 text-sm font-bold rounded-2xl text-center">

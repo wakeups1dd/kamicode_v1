@@ -38,6 +38,13 @@ export const getBySlug = query({
   },
 });
 
+export const getById = query({
+  args: { cohortId: v.id("cohorts") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.cohortId);
+  },
+});
+
 export const getByInviteCode = query({
   args: { inviteCode: v.string() },
   handler: async (ctx, args) => {
@@ -157,9 +164,9 @@ export const getMembers = query({
         userId: m.userId,
         role: m.role,
         joinedAt: m._creationTime,
-        username: u?.username,
-        displayName: u?.displayName,
-        avatarUrl: u?.avatarUrl
+        username: u?.username || (m.userId === "dev-user-id" ? "dev_user" : `user_${m.userId.slice(-6)}`),
+        displayName: u?.displayName || u?.username || (m.userId === "dev-user-id" ? "Dev User" : "Developer"),
+        avatarUrl: u?.avatarUrl || ""
       });
     }
     return result;

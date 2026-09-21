@@ -30,7 +30,7 @@ export function TrophyCabinet() {
     return <div className="animate-pulse h-32 bg-zinc-100 dark:bg-zinc-800 rounded-xl border-4 border-black shadow-[4px_4px_0px_#000]" />;
   }
 
-  const earnedIds = new Set(myBadges.map(ub => ub.badge.id));
+  const earnedIds = new Set(myBadges.map(ub => ub.badge?.id || (ub as any).id));
 
   const getIcon = (name: string, isEarned: boolean) => {
     const props = { className: `w-8 h-8 ${isEarned ? "text-main" : "text-zinc-400"}` };
@@ -54,6 +54,7 @@ export function TrophyCabinet() {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {allBadges.map(badge => {
           const isEarned = earnedIds.has(badge.id);
+          const iconName = badge.icon_name || (badge as any).iconName || "Award";
           
           return (
             <div 
@@ -65,7 +66,7 @@ export function TrophyCabinet() {
               }`}
             >
               <div className="mb-3">
-                {getIcon(badge.icon_name, isEarned)}
+                {getIcon(iconName, isEarned)}
               </div>
               <div className={`font-black text-sm text-center mb-1 ${isEarned ? "text-foreground" : "text-zinc-500"}`}>
                 {badge.name}

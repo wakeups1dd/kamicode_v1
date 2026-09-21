@@ -46,13 +46,16 @@ def create_cohort(
 
     invite_code = generate_invite_code(client)
     
-    cohort_id = client.mutation("cohorts:create", {
+    mutation_args = {
         "name": payload.name,
         "slug": slug,
-        "description": payload.description,
         "inviteCode": invite_code,
-        "createdBy": current_user["id"]
-    })
+        "createdBy": current_user["id"],
+    }
+    if payload.description:
+        mutation_args["description"] = payload.description.strip()
+
+    cohort_id = client.mutation("cohorts:create", mutation_args)
     
     res = client.query("cohorts:getBySlug", {"slug": slug})
     if res:
@@ -111,6 +114,11 @@ def get_cohort_detail(
     """Get detailed information about a cohort, including membership list."""
     cohort = client.query("cohorts:getBySlug", {"slug": slug})
     if not cohort:
+        try:
+            cohort = client.query("cohorts:getById", {"cohortId": slug})
+        except Exception:
+            cohort = None
+    if not cohort:
         raise HTTPException(status_code=404, detail="Cohort not found")
 
     members = client.query("cohorts:getMembers", {"cohortId": cohort.get("_id")})
@@ -129,11 +137,11 @@ def get_cohort_detail(
         "created_at": cohort.get("_creationTime"),
         "members": [
             {
-                "user_id": m.get("userId"),
-                "username": m.get("username"),
-                "display_name": m.get("displayName"),
+                "user_id": m.get("userId", ""),
+                "username": m.get("username") or (m.get("userId") if m.get("userId") != "dev-user-id" else "dev_user") or "Anonymous",
+                "display_name": m.get("displayName") or m.get("username") or "Developer",
                 "avatar_url": m.get("avatarUrl"),
-                "role": m.get("role"),
+                "role": m.get("role") or "member",
                 "joined_at": m.get("joinedAt")
             } for m in members
         ]
@@ -184,11 +192,13 @@ def update_cohort(
     if not user_member or user_member.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Only admins can update the cohort")
 
-    client.mutation("cohorts:update", {
-        "cohortId": cohort.get("_id"),
-        "name": payload.name,
-        "description": payload.description
-    })
+    update_args = {"cohortId": cohort.get("_id")}
+    if payload.name is not None:
+        update_args["name"] = payload.name
+    if payload.description is not None:
+        update_args["description"] = payload.description
+
+    client.mutation("cohorts:update", update_args)
     
     updated = client.query("cohorts:getBySlug", {"slug": slug})
     updated["id"] = str(updated["_id"])

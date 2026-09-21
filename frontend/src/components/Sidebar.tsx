@@ -308,31 +308,46 @@ export default function Sidebar() {
         {/* User Box at bottom with explicit Sign Out / Sign In */}
         <div className="px-3 py-4 border-t-4 border-black bg-background/50">
           {user ? (
-            <div
-              onClick={() => setIsSignOutConfirmOpen(true)}
-              className={`flex items-center gap-3 p-2 rounded-md border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 transition-all cursor-pointer ${
-                collapsed ? "justify-center p-1.5" : "p-2"
-              }`}
-              title="Sign Out"
-            >
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={username}
-                  className="w-8 h-8 rounded-md border-2 border-black object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-md bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
-                  {avatarInit}
-                </div>
-              )}
-              {!collapsed && (
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-black truncate">{displayName}</div>
-                  <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
-                    Sign Out
+            <div className="flex items-center gap-1.5">
+              <Link
+                href="/profile"
+                className={`flex-1 flex items-center gap-2.5 p-2 rounded-md border-2 border-black bg-secondary-background shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] hover:bg-main/10 hover:border-black transition-all cursor-pointer ${
+                  collapsed ? "justify-center p-1.5" : "p-2"
+                }`}
+                title="View Developer Profile"
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={username}
+                    className="w-8 h-8 rounded-md border-2 border-black object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-md bg-main border-2 border-black flex items-center justify-center text-sm font-black text-main-foreground flex-shrink-0">
+                    {avatarInit}
                   </div>
-                </div>
+                )}
+                {!collapsed && (
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-black truncate text-foreground">{displayName}</div>
+                    <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
+                      View Profile
+                    </div>
+                  </div>
+                )}
+              </Link>
+              {!collapsed && (
+                <button
+                  onClick={() => setIsSignOutConfirmOpen(true)}
+                  className="p-2 rounded-md border-2 border-black bg-secondary-background text-zinc-500 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500 shadow-[2px_2px_0px_0px_#000] transition-all cursor-pointer flex-shrink-0"
+                  title="Sign Out"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </button>
               )}
             </div>
           ) : (

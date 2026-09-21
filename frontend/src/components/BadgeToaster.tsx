@@ -18,12 +18,15 @@ export function BadgeToaster() {
         const badges = await getMyBadges();
         const storedIds = JSON.parse(localStorage.getItem("seen_badges") || "[]");
         
-        const newBadges = badges.filter(b => !storedIds.includes(b.badge.id));
+        const newBadges = badges.filter(b => {
+          const id = b.badge?.id || (b as any).id;
+          return id && !storedIds.includes(id);
+        });
         
         if (newBadges.length > 0) {
           setToasts(prev => [...prev, ...newBadges]);
           
-          const newIds = [...storedIds, ...newBadges.map(b => b.badge.id)];
+          const newIds = [...storedIds, ...newBadges.map(b => b.badge?.id || (b as any).id)];
           localStorage.setItem("seen_badges", JSON.stringify(newIds));
 
           // Auto dismiss each new badge after 5 seconds
@@ -80,17 +83,17 @@ export function BadgeToaster() {
           </button>
           
           <div className="flex-shrink-0 bg-main/20 p-6 rounded-full border-4 border-main mb-6 transform hover:scale-110 transition-transform duration-300 shadow-[4px_4px_0px_#000]">
-            {getIcon(tb.badge.icon_name, "w-24 h-24 text-main fill-current")}
+            {getIcon(tb.badge?.icon_name || (tb.badge as any)?.iconName || (tb as any).icon_name || (tb as any).iconName || "Award", "w-24 h-24 text-main fill-current")}
           </div>
           
           <div className="text-xs font-black uppercase font-mono text-main mb-2 tracking-widest bg-main/10 px-3 py-1 rounded-full border-2 border-main">
             Badge Unlocked!
           </div>
           <div className="font-black text-3xl text-foreground leading-tight mb-3">
-            {tb.badge.name}
+            {tb.badge?.name || (tb as any).name}
           </div>
           <div className="text-sm font-mono text-foreground/70 leading-relaxed mb-6 font-bold">
-            {tb.badge.description}
+            {tb.badge?.description || (tb as any).description}
           </div>
           
           <button 
