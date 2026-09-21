@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { listProblems, listMySubmissions } from "@/lib/api";
+import { listProblems, listMySubmissions, getGlobalDailyChallenge, type GlobalDailyChallengeResponse } from "@/lib/api";
 import type { ProblemSummary } from "@/lib/types";
 import {
   CheckCircle2,
@@ -12,7 +12,10 @@ import {
   Tag,
   ArrowUpDown,
   GitPullRequest,
-  HelpCircle
+  HelpCircle,
+  Sparkles,
+  ArrowRight,
+  Clock,
 } from "lucide-react";
 
 function CustomDropdown({
@@ -75,6 +78,7 @@ function CustomDropdown({
 
 export default function ProblemsPage() {
   const [problems, setProblems] = useState<ProblemSummary[]>([]);
+  const [dailyChallenge, setDailyChallenge] = useState<GlobalDailyChallengeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,10 +94,12 @@ export default function ProblemsPage() {
   useEffect(() => {
     Promise.all([
       listProblems(),
-      listMySubmissions().catch(() => [])
+      listMySubmissions().catch(() => []),
+      getGlobalDailyChallenge().catch(() => null),
     ])
-      .then(([problemsData, submissionsData]) => {
+      .then(([problemsData, submissionsData, dailyData]) => {
         setProblems(problemsData);
+        setDailyChallenge(dailyData);
         
         const solved = new Set<string>();
         const attempted = new Set<string>();
@@ -168,6 +174,57 @@ export default function ProblemsPage() {
       </div>
 
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5 sm:space-y-6">
+        {/* Daily Challenge Spotlight Banner */}
+        {dailyChallenge && (
+          <div className="bg-secondary-background border-4 border-black rounded-xl p-4 sm:p-5 shadow-[4px_4px_0px_0px_#000] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-slide-up relative overflow-hidden">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="flex items-center gap-1.5 text-[9px] uppercase font-mono font-black px-2 py-0.5 rounded border-2 border-black bg-[#8bd600] text-black shadow-[1px_1px_0px_0px_#000]">
+                  <Sparkles className="w-3 h-3" />
+                  {dailyChallenge.generated_by_ai ? "AI Daily Challenge" : "Daily Challenge"}
+                </span>
+                <span
+                  className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border-2 border-black ${
+                    dailyChallenge.difficulty === "easy"
+                      ? "bg-[#8bd600] text-black"
+                      : dailyChallenge.difficulty === "medium"
+                      ? "bg-[#ffbf00] text-black"
+                      : "bg-[#f85149] text-white"
+                  }`}
+                >
+                  {dailyChallenge.difficulty}
+                </span>
+                <span className="text-[10px] font-mono font-bold text-muted-foreground bg-background px-2 py-0.5 rounded border border-black">
+                  {dailyChallenge.topic.toUpperCase()}
+                </span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-foreground">
+                {dailyChallenge.problem_title}
+              </h3>
+              <p className="text-xs text-muted-foreground font-mono">
+                Solve today&apos;s global challenge to maintain your streak. New challenge drops at 12:00 AM UTC.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end">
+              {dailyChallenge.is_solved ? (
+                <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-black bg-[#8bd600]/20 text-[#8bd600] font-black text-xs">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Solved Today</span>
+                </div>
+              ) : (
+                <Link
+                  href={`/problems/${dailyChallenge.problem_slug}`}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-main text-main-foreground border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000] hover:translate-x-[1.5px] hover:translate-y-[1.5px] hover:shadow-[1px_1px_0px_0px_#000] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all"
+                >
+                  <span>Solve Challenge</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* GitHub Issues style Filters Section */}
         <div className="flex flex-col md:flex-row gap-4">
           {/* Main Search Query Input */}

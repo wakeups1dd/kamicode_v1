@@ -219,6 +219,27 @@ export interface DailyChallengeResponse {
   problem_title: string;
 }
 
+export interface GlobalDailyChallengeResponse {
+  id: string;
+  problem_id: string;
+  problem_slug: string;
+  problem_title: string;
+  difficulty: "easy" | "medium" | "hard";
+  topic: string;
+  date: string;
+  generated_by_ai: boolean;
+  seconds_until_reset: number;
+  is_solved?: boolean;
+}
+
+export async function getGlobalDailyChallenge(): Promise<GlobalDailyChallengeResponse> {
+  return apiFetch<GlobalDailyChallengeResponse>("/api/daily-challenge");
+}
+
+export async function getDailyChallengeHistory(limit: number = 14): Promise<GlobalDailyChallengeResponse[]> {
+  return apiFetch<GlobalDailyChallengeResponse[]>(`/api/daily-challenge/history?limit=${limit}`);
+}
+
 export async function getCohortDailyChallenge(slug: string): Promise<DailyChallengeResponse> {
   return apiFetch<DailyChallengeResponse>(`/api/cohorts/${slug}/daily-challenge`);
 }

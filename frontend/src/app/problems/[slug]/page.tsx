@@ -4,8 +4,9 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { getProblem, submitCode, pollSubmission, getAIAnalysis } from "@/lib/api";
+import { getProblem, submitCode, pollSubmission, getAIAnalysis, getGlobalDailyChallenge } from "@/lib/api";
 import type { ProblemDetail, SubmissionResponse, AIAnalysisResponse } from "@/lib/types";
+import { Sparkles } from "lucide-react";
 import ProblemPanel from "@/components/ProblemPanel";
 import TerminalConsole from "@/components/TerminalConsole";
 import AIAnalysisCard from "@/components/AIAnalysisCard";
@@ -37,6 +38,7 @@ export default function ProblemArenaPage({
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [language, setLanguage] = useState<"python" | "javascript" | "cpp" | "java">("python");
+  const [isDailyChallenge, setIsDailyChallenge] = useState(false);
 
   const defaultSnippets = {
     python: "# Write your solution here\n",
@@ -63,6 +65,14 @@ export default function ProblemArenaPage({
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+
+    getGlobalDailyChallenge()
+      .then((dc) => {
+        if (dc && (dc.problem_slug === slug || (problem && dc.problem_id === (problem as any).id))) {
+          setIsDailyChallenge(true);
+        }
+      })
+      .catch(() => {});
   }, [slug]);
 
   // Save code to localStorage on edit
@@ -195,6 +205,13 @@ export default function ProblemArenaPage({
           >
             {problem.difficulty}
           </span>
+
+          {isDailyChallenge && (
+            <span className="flex items-center gap-1 text-[9px] font-mono font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border-2 border-black bg-[#8bd600] text-black shadow-[1px_1px_0px_0px_#000]">
+              <Sparkles className="w-3 h-3" />
+              <span>Daily Challenge</span>
+            </span>
+          )}
         </div>
 
         {/* Right: Actions */}

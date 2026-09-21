@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { listProblems, getMyStreak, listMySubmissions } from "@/lib/api";
+import { listProblems, getMyStreak, listMySubmissions, getGlobalDailyChallenge, type GlobalDailyChallengeResponse } from "@/lib/api";
 import type { ProblemSummary, SubmissionResponse, UserStreakResponse } from "@/lib/types";
 import {
   GitCommit,
@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
+  Clock,
 } from "lucide-react";
 
 /* ── Contribution Calendar Component ────────────────────────── */
@@ -509,6 +510,8 @@ export default function HomePage() {
   const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
   const [streak, setStreak] = useState<UserStreakResponse | null>(null);
   const [problemMap, setProblemMap] = useState<Record<string, ProblemSummary>>({});
+  const [dailyChallenge, setDailyChallenge] = useState<GlobalDailyChallengeResponse | null>(null);
+  const [timeLeftStr, setTimeLeftStr] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   const email = user?.primaryEmailAddress?.emailAddress || user?.email || "";
@@ -523,15 +526,17 @@ export default function HomePage() {
     const loadDashboard = async () => {
       setLoading(true);
       try {
-        const [problemsData, submissionsData, streakData] = await Promise.all([
+        const [problemsData, submissionsData, streakData, dailyData] = await Promise.all([
           listProblems().catch(() => []),
           listMySubmissions().catch(() => []),
-          getMyStreak().catch(() => null)
+          getMyStreak().catch(() => null),
+          getGlobalDailyChallenge().catch(() => null),
         ]);
         
         setProblems(problemsData);
         setSubmissions(submissionsData);
         setStreak(streakData);
+        setDailyChallenge(dailyData);
 
         const pMap: Record<string, ProblemSummary> = {};
         problemsData.forEach((p) => {
@@ -550,6 +555,28 @@ export default function HomePage() {
     
     loadDashboard();
   }, [user]);
+
+  // Live countdown timer to 12:00 AM UTC reset
+  useEffect(() => {
+    if (!dailyChallenge || dailyChallenge.seconds_until_reset == null) return;
+    let secondsLeft = dailyChallenge.seconds_until_reset;
+
+    const updateTimer = () => {
+      if (secondsLeft <= 0) {
+        setTimeLeftStr("Resetting...");
+        return;
+      }
+      const h = Math.floor(secondsLeft / 3600);
+      const m = Math.floor((secondsLeft % 3600) / 60);
+      const s = secondsLeft % 60;
+      setTimeLeftStr(`${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`);
+      secondsLeft -= 1;
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [dailyChallenge]);
 
   const totalSolved = new Set(
     submissions.filter(s => s.status === "accepted").map(s => s.problem_id)
@@ -656,19 +683,54 @@ export default function HomePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <Link
-                href={problems[0] ? `/problems/${problems[0].slug}` : "/problems"}
-                className="bg-secondary-background border-2 border-black text-foreground p-3 sm:p-4 flex flex-col justify-between items-start gap-3 h-[110px] sm:h-[124px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
+                href={
+                  dailyChallenge?.problem_slug
+                    ? `/problems/${dailyChallenge.problem_slug}`
+                    : problems[0]
+                    ? `/problems/${problems[0].slug}`
+                    : "/problems"
+                }
+                className="bg-secondary-background border-2 border-black text-foreground p-3 sm:p-4 flex flex-col justify-between items-start gap-2.5 h-[120px] sm:h-[130px] rounded-xl shadow-[3px_3px_0px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all group relative overflow-hidden"
               >
                 <div className="flex items-center justify-between w-full">
-                  <Play className="w-5 h-5 text-[#8bd600] group-hover:scale-110 transition-transform" />
-                  <span className="text-[9px] uppercase font-mono font-black px-2 py-0.5 rounded border-2 border-black bg-main text-main-foreground shadow-[1px_1px_0px_0px_#000]">
-                    Daily Run
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Play className="w-4 h-4 text-[#8bd600] group-hover:scale-110 transition-transform flex-shrink-0" />
+                    <span className="text-[9px] uppercase font-mono font-black px-1.5 py-0.5 rounded border border-black bg-main text-main-foreground shadow-[1px_1px_0px_0px_#000]">
+                      {dailyChallenge?.generated_by_ai ? "AI Daily" : "Daily Challenge"}
+                    </span>
+                  </div>
+                  {dailyChallenge?.is_solved ? (
+                    <span className="text-[8px] font-mono font-black px-1.5 py-0.5 rounded border border-black bg-[#8bd600] text-black">
+                      ✓ SOLVED
+                    </span>
+                  ) : (
+                    <span className="text-[8px] font-mono font-bold text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-muted-foreground" />
+                      <span>{timeLeftStr || "12am UTC"}</span>
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <h4 className="text-xs font-black text-foreground">Daily Challenge</h4>
-                  <p className="text-[11px] text-muted-foreground truncate max-w-full font-bold">
-                    {problems[0]?.title || "Practice DSA Problems"}
+                <div className="w-full">
+                  <div className="flex items-center justify-between gap-1">
+                    <h4 className="text-xs font-black text-foreground truncate">
+                      {dailyChallenge?.problem_title || problems[0]?.title || "Daily Challenge"}
+                    </h4>
+                    {dailyChallenge?.difficulty && (
+                      <span
+                        className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border border-black flex-shrink-0 ${
+                          dailyChallenge.difficulty === "easy"
+                            ? "bg-[#8bd600] text-black"
+                            : dailyChallenge.difficulty === "medium"
+                            ? "bg-[#ffbf00] text-black"
+                            : "bg-[#f85149] text-white"
+                        }`}
+                      >
+                        {dailyChallenge.difficulty}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground truncate font-mono font-bold mt-0.5">
+                    {dailyChallenge?.topic ? `${dailyChallenge.topic.toUpperCase()} • Resets 12am UTC` : "Practice DSA Problems"}
                   </p>
                 </div>
               </Link>

@@ -13,6 +13,8 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from limiter import limiter
 
+import os
+import asyncio
 from config import settings
 from routers import (
     health,
@@ -26,7 +28,9 @@ from routers import (
     badges,
     friends,
     users,
+    daily_challenge,
 )
+from routers.daily_challenge import daily_challenge_cron_loop
 
 # Configure structured logging
 logging.basicConfig(
@@ -44,7 +48,18 @@ async def lifespan(app: FastAPI):
     logger.info(f"Code Runner: {settings.code_runner_mode}")
     ai_provider = "Gemini" if settings.gemini_api_key else ("OpenAI" if settings.openai_api_key else "Local Heuristic Engine")
     logger.info(f"AI Service: {ai_provider}")
+    
+    # Start midnight daily challenge cron task (only outside test runners)
+    cron_task = None
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        cron_task = asyncio.create_task(daily_challenge_cron_loop())
     yield
+    if cron_task:
+        cron_task.cancel()
+        try:
+            await cron_task
+        except asyncio.CancelledError:
+            pass
     logger.info("KamiCode API shutting down...")
 
 
@@ -106,6 +121,7 @@ app.include_router(arena.router)
 app.include_router(badges.router)
 app.include_router(friends.router)
 app.include_router(users.router)
+app.include_router(daily_challenge.router)
 
 
 @app.get("/")

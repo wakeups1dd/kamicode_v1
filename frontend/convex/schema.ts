@@ -105,6 +105,18 @@ export default defineSchema({
     date: v.string(), // YYYY-MM-DD
   }).index("by_cohort", ["cohortId"]),
 
+  globalDailyChallenges: defineTable({
+    date: v.string(), // "YYYY-MM-DD"
+    problemId: v.string(),
+    problemSlug: v.string(),
+    problemTitle: v.string(),
+    difficulty: v.string(),
+    topic: v.string(),
+    generatedByAi: v.boolean(),
+    aiModel: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_date", ["date"]),
+
   badges: defineTable({
     name: v.string(),
     description: v.string(),
