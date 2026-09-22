@@ -250,7 +250,19 @@ async def _execute_submission(
         if final_stderr is not None:
             update_args["stderr"] = final_stderr
 
-        client.mutation("submissions:updateResult", update_args)
+        # Authoritatively notify arena state manager if user is in an active match
+        try:
+            from routers.arena import on_authoritative_match_solved
+            await arena_manager.notify_submission_outcome(
+                user_id=user_id,
+                problem_id=problem_id,
+                status=final_status,
+                passed=passed_count,
+                total=len(test_cases),
+                on_solved_callback=on_authoritative_match_solved,
+            )
+        except Exception as ae:
+            print(f"[ERROR] Failed to notify arena match of submission outcome: {ae}")
 
         # Update user streak and evaluate badges if accepted
         if final_status == "accepted" and user_id and user_id != "anonymous":

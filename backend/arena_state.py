@@ -49,6 +49,15 @@ class ArenaState:
         # Disconnect grace timers: (match_id, user_id) -> asyncio.Task
         self.disconnect_tasks: Dict[Tuple[str, str], asyncio.Task] = {}
 
+        # Match duration game clocks: match_id -> asyncio.Task
+        self.match_clock_tasks: Dict[str, asyncio.Task] = {}
+
+        # Post-match cleanup tasks: match_id -> asyncio.Task
+        self.cleanup_tasks: Dict[str, asyncio.Task] = {}
+
+        # Players transitioning between lobby and battle room: (match_id, user_id) -> timestamp
+        self.navigating_players: Dict[Tuple[str, str], float] = {}
+
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
 
@@ -96,25 +105,45 @@ class ArenaState:
                 except Exception:
                     player_data["connected"] = False
 
-    def handle_reconnect(self, user_id: str, websocket: WebSocket) -> Optional[str]:
+    def mark_navigating(self, match_id: str, user_id: str):
+        """Mark a player as navigating from lobby to battle room to suppress false disconnect alerts."""
+        self.navigating_players[(match_id, user_id)] = time.time()
+
+    def is_navigating(self, match_id: str, user_id: str) -> bool:
+        """Check if user is in route transition (valid for 15 seconds)."""
+        key = (match_id, user_id)
+        if key in self.navigating_players:
+            if time.time() - self.navigating_players[key] < 15.0:
+                return True
+            else:
+                del self.navigating_players[key]
+        return False
+
+    def handle_reconnect(self, user_id: str, websocket: WebSocket, target_match_id: Optional[str] = None) -> Optional[str]:
         """
-        Check if user is reconnecting to an ongoing match within grace window.
+        Check if user is connecting/reconnecting to an ongoing match.
+        If target_match_id is provided, enforces that the user belongs to that match.
         Cancels pending forfeit timer if present.
         """
-        match_id = self.user_to_match.get(user_id)
+        match_id = target_match_id or self.user_to_match.get(user_id)
         if match_id and match_id in self.active_matches:
             match = self.active_matches[match_id]
-            if match["status"] in ("countdown", "in_progress"):
-                # Cancel disconnect timer if running
-                task_key = (match_id, user_id)
-                if task_key in self.disconnect_tasks:
-                    self.disconnect_tasks[task_key].cancel()
-                    del self.disconnect_tasks[task_key]
+            if user_id in match.get("players", {}):
+                if match["status"] in ("countdown", "in_progress"):
+                    # Cancel disconnect timer if running
+                    task_key = (match_id, user_id)
+                    if task_key in self.disconnect_tasks:
+                        self.disconnect_tasks[task_key].cancel()
+                        del self.disconnect_tasks[task_key]
 
-                match["players"][user_id]["ws"] = websocket
-                match["players"][user_id]["connected"] = True
-                match["players"][user_id]["last_ping"] = time.time()
-                return match_id
+                    # Clear navigating status
+                    self.navigating_players.pop((match_id, user_id), None)
+
+                    match["players"][user_id]["ws"] = websocket
+                    match["players"][user_id]["connected"] = True
+                    match["players"][user_id]["last_ping"] = time.time()
+                    self.user_to_match[user_id] = match_id
+                    return match_id
         return None
 
     def start_disconnect_grace_timer(self, match_id: str, user_id: str, callback):
@@ -137,5 +166,106 @@ class ArenaState:
         task = asyncio.create_task(_grace_period())
         self.disconnect_tasks[task_key] = task
 
+    def start_match_clock(self, match_id: str, timeout_sec: int, timeout_callback):
+        """Start a match duration countdown clock (e.g., 15 minutes / 900 seconds)."""
+        if match_id in self.match_clock_tasks:
+            self.match_clock_tasks[match_id].cancel()
+
+        async def _match_clock():
+            try:
+                await asyncio.sleep(timeout_sec)
+                await timeout_callback(match_id)
+            except asyncio.CancelledError:
+                pass
+            finally:
+                self.match_clock_tasks.pop(match_id, None)
+
+        task = asyncio.create_task(_match_clock())
+        self.match_clock_tasks[match_id] = task
+
+    def schedule_cleanup(self, match_id: str, delay_sec: int = 60):
+        """Schedule garbage collection of match and user references after conclusion."""
+        if match_id in self.cleanup_tasks:
+            self.cleanup_tasks[match_id].cancel()
+
+        async def _cleanup():
+            try:
+                await asyncio.sleep(delay_sec)
+                # Cancel any remaining timers
+                if match_id in self.match_clock_tasks:
+                    self.match_clock_tasks[match_id].cancel()
+                    self.match_clock_tasks.pop(match_id, None)
+
+                for (mid, uid) in list(self.disconnect_tasks.keys()):
+                    if mid == match_id:
+                        self.disconnect_tasks[mid, uid].cancel()
+                        self.disconnect_tasks.pop((mid, uid), None)
+
+                # Remove from active matches and user mapping
+                if match_id in self.active_matches:
+                    match = self.active_matches.pop(match_id, None)
+                    if match:
+                        for pid in match.get("players", {}):
+                            if self.user_to_match.get(pid) == match_id:
+                                self.user_to_match.pop(pid, None)
+            except asyncio.CancelledError:
+                pass
+        try:
+            loop = asyncio.get_running_loop()
+            task = loop.create_task(_cleanup())
+            self.cleanup_tasks[match_id] = task
+        except RuntimeError:
+            # Fallback for synchronous test execution without running event loop
+            if match_id in self.active_matches:
+                match = self.active_matches.pop(match_id, None)
+                if match:
+                    for pid in match.get("players", {}):
+                        if self.user_to_match.get(pid) == match_id:
+                            self.user_to_match.pop(pid, None)
+
+    async def notify_submission_outcome(
+        self,
+        user_id: str,
+        problem_id: str,
+        status: str,
+        passed: int,
+        total: int,
+        on_solved_callback=None,
+    ):
+        """
+        Authoritative callback triggered when code execution finishes in backend.
+        Updates state and notifies players.
+        """
+        match_id = self.user_to_match.get(user_id)
+        if not match_id or match_id not in self.active_matches:
+            return
+
+        match = self.active_matches[match_id]
+        if match.get("status") not in ("countdown", "in_progress"):
+            return
+
+        if user_id in match["players"]:
+            match["players"][user_id]["status"] = status
+            match["players"][user_id]["passed_tests"] = passed
+            match["players"][user_id]["total_tests"] = total
+
+        # Broadcast progress to opponent
+        await self.broadcast_to_match(
+            match_id,
+            {
+                "type": "opponent_evaluated",
+                "user_id": user_id,
+                "status": status,
+                "passed_count": passed,
+                "total_count": total,
+            },
+            exclude_user_id=user_id,
+        )
+
+        # If accepted, authoritatively finish match
+        if status == "accepted" and on_solved_callback:
+            await on_solved_callback(match_id, user_id)
+
 
 arena_manager = ArenaState()
+

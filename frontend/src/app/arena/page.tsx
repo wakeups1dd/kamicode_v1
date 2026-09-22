@@ -52,7 +52,7 @@ export default function ArenaLobby() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const startMatchmaking = async (code: string | null = null) => {
+  const startMatchmaking = async (code: string | null = null, isJoin: boolean = false) => {
     setStatus("connecting");
     setError("");
     
@@ -67,8 +67,13 @@ export default function ArenaLobby() {
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const wsBase = apiBase.replace(/^http/, "ws");
       let wsUrl = `${wsBase}/api/arena/ws/${userId}`;
+      const params = new URLSearchParams();
       if (code) {
-        wsUrl += `?room_code=${code}`;
+        params.set("room_code", code);
+        if (isJoin) params.set("is_join", "true");
+      }
+      if (params.toString()) {
+        wsUrl += `?${params.toString()}`;
       }
       
       const ws = new WebSocket(wsUrl);
@@ -90,9 +95,17 @@ export default function ArenaLobby() {
           } else if (data.type === "match_found" || data.type === "reconnected") {
             setStatus("found");
             setTimeout(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                try {
+                  ws.send(JSON.stringify({ type: "navigating" }));
+                } catch {}
+              }
               ws.close();
               router.push(`/arena/${data.match_id}`);
-            }, 1000);
+            }, 800);
+          } else if (data.type === "error") {
+            setError(data.message || "Matchmaking error");
+            setStatus("idle");
           }
         } catch (err) {
           console.error("Failed to parse WS message", err);
@@ -127,13 +140,13 @@ export default function ArenaLobby() {
       }
     }
 
-    startMatchmaking(code);
+    startMatchmaking(code, false);
   };
 
   const handleJoinFriendMatch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputCode.trim()) return;
-    startMatchmaking(inputCode.trim().toUpperCase());
+    startMatchmaking(inputCode.trim().toUpperCase(), true);
   };
 
   const cancelMatchmaking = () => {

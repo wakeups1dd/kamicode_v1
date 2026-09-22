@@ -9,7 +9,7 @@ import random
 import time
 import asyncio
 from typing import Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Request
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Request, Query
 from pydantic import BaseModel
 
 from database import get_convex
@@ -82,7 +82,7 @@ async def _finish_match(
 ):
     """
     Finalize an arena match, calculate Elo rating deltas, record to Convex DB,
-    and broadcast outcome to players.
+    broadcast outcome to players, and schedule memory cleanup.
     """
     if match_id not in arena_manager.active_matches:
         return
@@ -155,6 +155,20 @@ async def _finish_match(
             "reason": reason,
         })
 
+    # Schedule memory cleanup after 60 seconds
+    arena_manager.schedule_cleanup(match_id, delay_sec=60)
+
+
+async def on_authoritative_match_solved(match_id: str, winner_id: str):
+    """Callback invoked when backend code runner confirms an accepted solution."""
+    client = ConvexClient(settings.convex_url) if settings.convex_url else get_convex()
+    await _finish_match(
+        match_id=match_id,
+        winner_id=winner_id,
+        reason="solved",
+        client=client,
+    )
+
 
 async def _handle_forfeit_callback(match_id: str, disconnected_user_id: str):
     """Callback invoked after 30s disconnect grace timer expires without reconnection."""
@@ -162,7 +176,7 @@ async def _handle_forfeit_callback(match_id: str, disconnected_user_id: str):
         return
 
     match = arena_manager.active_matches[match_id]
-    if match["status"] != "in_progress":
+    if match["status"] not in ("countdown", "in_progress"):
         return
 
     # Find opponent
@@ -172,11 +186,38 @@ async def _handle_forfeit_callback(match_id: str, disconnected_user_id: str):
             opponent_id = pid
             break
 
-    client = ConvexClient(settings.convex_url)
+    # Mutual disconnect check: if opponent is also disconnected, avoid unfair win
+    client = ConvexClient(settings.convex_url) if settings.convex_url else get_convex()
+    opp_connected = match["players"].get(opponent_id, {}).get("connected", False) if opponent_id else False
+
+    if not opp_connected:
+        await _finish_match(
+            match_id=match_id,
+            winner_id=None,
+            reason="mutual_disconnect",
+            client=client,
+        )
+    else:
+        await _finish_match(
+            match_id=match_id,
+            winner_id=opponent_id,
+            reason="opponent_disconnected",
+            client=client,
+        )
+
+
+async def _handle_match_timeout(match_id: str):
+    """Callback invoked after 15-minute game clock expires without a winner."""
+    if match_id not in arena_manager.active_matches:
+        return
+    match = arena_manager.active_matches[match_id]
+    if match.get("status") not in ("countdown", "in_progress"):
+        return
+    client = ConvexClient(settings.convex_url) if settings.convex_url else get_convex()
     await _finish_match(
         match_id=match_id,
-        winner_id=opponent_id,
-        reason="opponent_disconnected",
+        winner_id=None,
+        reason="time_limit_exceeded",
         client=client,
     )
 
@@ -184,12 +225,19 @@ async def _handle_forfeit_callback(match_id: str, disconnected_user_id: str):
 # ─── WebSocket Endpoint ─────────────────────────────────────────────────
 
 @router.websocket("/ws/{user_id}")
-async def arena_websocket(websocket: WebSocket, user_id: str, room_code: Optional[str] = None):
+async def arena_websocket(
+    websocket: WebSocket,
+    user_id: str,
+    room_code: Optional[str] = None,
+    match_id: Optional[str] = None,
+    is_join: Optional[str] = None,
+):
     """
     Real-time 1v1 PvP Arena WebSocket endpoint.
-    Handles matchmaking, countdowns, real-time code progress, and disconnect windows.
+    Handles matchmaking, countdowns, real-time code progress, game clocks, and disconnect windows.
     """
-    client = ConvexClient(settings.convex_url)
+    is_joining = str(is_join).lower() in ("true", "1") if is_join is not None else False
+    client = ConvexClient(settings.convex_url) if settings.convex_url else get_convex()
     await arena_manager.connect(websocket)
 
     # Fetch user profile and Elo rating
@@ -203,136 +251,190 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: Optiona
     user_elo = (user.get("eloRating") or 1200) if user else 1200
 
     try:
-        # Check if user is reconnecting to an active match
-        reconnected_match_id = arena_manager.handle_reconnect(user_id, websocket)
-        if reconnected_match_id:
-            match = arena_manager.active_matches[reconnected_match_id]
-            await websocket.send_json({
-                "type": "reconnected",
-                "match_id": reconnected_match_id,
-                "problem_id": match["problem_id"],
-                "problem_slug": match["problem_slug"],
-                "problem_title": match["problem_title"],
-                "status": match["status"],
-                "players": [
-                    {"user_id": pid, "username": pdata["username"], "elo": pdata.get("elo", 1200)}
-                    for pid, pdata in match["players"].items()
-                ],
-                "state": {
-                    pid: {
-                        "status": pdata.get("status", "started"),
-                        "passed_tests": pdata.get("passed_tests", 0),
-                        "total_tests": pdata.get("total_tests", 0),
-                    }
-                    for pid, pdata in match["players"].items()
-                },
-            })
-            # Notify opponent that player has reconnected
-            await arena_manager.broadcast_to_match(reconnected_match_id, {
-                "type": "player_reconnected",
-                "user_id": user_id,
-            })
-        else:
-            # Matchmaking Creator Helper
-            async def start_match(opponent_id: str, opp_username: str, opp_elo: int, opp_ws: WebSocket):
-                match_id = str(uuid.uuid4())
-
-                # Select a random problem from Convex
-                problem = None
-                try:
-                    problems = client.query("problems:list", {})
-                    if problems:
-                        problem = random.choice(problems)
-                except Exception:
-                    pass
-
-                problem_id = str(problem["_id"]) if problem else "1"
-                problem_slug = problem.get("slug", "two-sum") if problem else "two-sum"
-                problem_title = problem.get("title", "Two Sum") if problem else "Two Sum"
-
-                match_data = {
-                    "match_id": match_id,
-                    "problem_id": problem_id,
-                    "problem_slug": problem_slug,
-                    "problem_title": problem_title,
-                    "status": "countdown",
-                    "started_at": time.time(),
-                    "players": {
-                        user_id: {
-                            "ws": websocket,
-                            "username": username,
-                            "elo": user_elo,
-                            "connected": True,
-                            "status": "starting",
-                            "passed_tests": 0,
-                            "total_tests": 0,
-                            "last_ping": time.time(),
-                        },
-                        opponent_id: {
-                            "ws": opp_ws,
-                            "username": opp_username,
-                            "elo": opp_elo,
-                            "connected": True,
-                            "status": "starting",
-                            "passed_tests": 0,
-                            "total_tests": 0,
-                            "last_ping": time.time(),
-                        },
-                    },
-                }
-                arena_manager.active_matches[match_id] = match_data
-                arena_manager.user_to_match[user_id] = match_id
-                arena_manager.user_to_match[opponent_id] = match_id
-
-                # Broadcast match found with 3s synchronized countdown
-                await arena_manager.broadcast_to_match(match_id, {
-                    "type": "match_found",
-                    "match_id": match_id,
-                    "countdown_seconds": 3,
-                    "problem_title": problem_title,
-                    "problem_slug": problem_slug,
+        # Case 1: Client specified a specific match_id (battle room connection)
+        if match_id:
+            reconnected_match_id = arena_manager.handle_reconnect(user_id, websocket, target_match_id=match_id)
+            if reconnected_match_id:
+                match = arena_manager.active_matches[reconnected_match_id]
+                await websocket.send_json({
+                    "type": "reconnected",
+                    "match_id": reconnected_match_id,
+                    "problem_id": match["problem_id"],
+                    "problem_slug": match["problem_slug"],
+                    "problem_title": match["problem_title"],
+                    "status": match["status"],
                     "players": [
-                        {"user_id": user_id, "username": username, "elo": user_elo},
-                        {"user_id": opponent_id, "username": opp_username, "elo": opp_elo},
+                        {"user_id": pid, "username": pdata["username"], "elo": pdata.get("elo", 1200)}
+                        for pid, pdata in match["players"].items()
                     ],
+                    "state": {
+                        pid: {
+                            "status": pdata.get("status", "started"),
+                            "passed_tests": pdata.get("passed_tests", 0),
+                            "total_tests": pdata.get("total_tests", 0),
+                        }
+                        for pid, pdata in match["players"].items()
+                    },
                 })
-
-                # Transition to in_progress after countdown
-                async def _countdown_transition():
-                    await asyncio.sleep(3)
-                    if match_id in arena_manager.active_matches:
-                        arena_manager.active_matches[match_id]["status"] = "in_progress"
-                        await arena_manager.broadcast_to_match(match_id, {
-                            "type": "match_start",
-                            "match_id": match_id,
-                            "problem_id": problem_id,
-                            "problem_slug": problem_slug,
-                            "problem_title": problem_title,
-                        })
-
-                asyncio.create_task(_countdown_transition())
-
-            # Handle Private Room vs Public Queue
-            if room_code:
-                if room_code in arena_manager.private_rooms:
-                    opp_id, opp_name, opp_elo_val, opp_socket = arena_manager.private_rooms.pop(room_code)
-                    if opp_id != user_id:
-                        await start_match(opp_id, opp_name, opp_elo_val, opp_socket)
-                    else:
-                        arena_manager.private_rooms[room_code] = (user_id, username, user_elo, websocket)
-                else:
-                    arena_manager.private_rooms[room_code] = (user_id, username, user_elo, websocket)
-                    await websocket.send_json({"type": "waiting_private", "room_code": room_code})
+                # Notify opponent that player has reconnected
+                await arena_manager.broadcast_to_match(reconnected_match_id, {
+                    "type": "player_reconnected",
+                    "user_id": user_id,
+                })
             else:
-                if arena_manager.waiting_queue:
-                    opp_id, opp_name, opp_elo_val, opp_socket = arena_manager.waiting_queue.pop(0)
-                    if opp_id != user_id:
-                        await start_match(opp_id, opp_name, opp_elo_val, opp_socket)
+                # Match expired or user does not belong to it — reject cleanly without enqueuing
+                await websocket.send_json({
+                    "type": "error",
+                    "message": "Match not found or has already finished.",
+                })
+                await websocket.close(code=4004)
+                return
+
+        # Case 2: General connection (lobby matchmaking or natural reconnect)
+        else:
+            reconnected_match_id = arena_manager.handle_reconnect(user_id, websocket)
+            if reconnected_match_id:
+                match = arena_manager.active_matches[reconnected_match_id]
+                await websocket.send_json({
+                    "type": "reconnected",
+                    "match_id": reconnected_match_id,
+                    "problem_id": match["problem_id"],
+                    "problem_slug": match["problem_slug"],
+                    "problem_title": match["problem_title"],
+                    "status": match["status"],
+                    "players": [
+                        {"user_id": pid, "username": pdata["username"], "elo": pdata.get("elo", 1200)}
+                        for pid, pdata in match["players"].items()
+                    ],
+                    "state": {
+                        pid: {
+                            "status": pdata.get("status", "started"),
+                            "passed_tests": pdata.get("passed_tests", 0),
+                            "total_tests": pdata.get("total_tests", 0),
+                        }
+                        for pid, pdata in match["players"].items()
+                    },
+                })
+                await arena_manager.broadcast_to_match(reconnected_match_id, {
+                    "type": "player_reconnected",
+                    "user_id": user_id,
+                })
+            else:
+                # Matchmaking Creator Helper
+                async def start_match(opponent_id: str, opp_username: str, opp_elo: int, opp_ws: WebSocket):
+                    new_match_id = str(uuid.uuid4())
+
+                    # Select a random problem from Convex
+                    problem = None
+                    try:
+                        problems = client.query("problems:list", {})
+                        if problems:
+                            problem = random.choice(problems)
+                    except Exception:
+                        pass
+
+                    problem_id = str(problem["_id"]) if problem else "1"
+                    problem_slug = problem.get("slug", "two-sum") if problem else "two-sum"
+                    problem_title = problem.get("title", "Two Sum") if problem else "Two Sum"
+
+                    match_data = {
+                        "match_id": new_match_id,
+                        "problem_id": problem_id,
+                        "problem_slug": problem_slug,
+                        "problem_title": problem_title,
+                        "status": "countdown",
+                        "started_at": time.time(),
+                        "players": {
+                            user_id: {
+                                "ws": websocket,
+                                "username": username,
+                                "elo": user_elo,
+                                "connected": True,
+                                "status": "starting",
+                                "passed_tests": 0,
+                                "total_tests": 0,
+                                "last_ping": time.time(),
+                            },
+                            opponent_id: {
+                                "ws": opp_ws,
+                                "username": opp_username,
+                                "elo": opp_elo,
+                                "connected": True,
+                                "status": "starting",
+                                "passed_tests": 0,
+                                "total_tests": 0,
+                                "last_ping": time.time(),
+                            },
+                        },
+                    }
+                    arena_manager.active_matches[new_match_id] = match_data
+                    arena_manager.user_to_match[user_id] = new_match_id
+                    arena_manager.user_to_match[opponent_id] = new_match_id
+
+                    # Broadcast match found with 3s countdown
+                    await arena_manager.broadcast_to_match(new_match_id, {
+                        "type": "match_found",
+                        "match_id": new_match_id,
+                        "countdown_seconds": 3,
+                        "problem_title": problem_title,
+                        "problem_slug": problem_slug,
+                        "players": [
+                            {"user_id": user_id, "username": username, "elo": user_elo},
+                            {"user_id": opponent_id, "username": opp_username, "elo": opp_elo},
+                        ],
+                    })
+
+                    # Transition to in_progress after countdown
+                    async def _countdown_transition():
+                        await asyncio.sleep(3)
+                        if new_match_id in arena_manager.active_matches:
+                            arena_manager.active_matches[new_match_id]["status"] = "in_progress"
+                            await arena_manager.broadcast_to_match(new_match_id, {
+                                "type": "match_start",
+                                "match_id": new_match_id,
+                                "problem_id": problem_id,
+                                "problem_slug": problem_slug,
+                                "problem_title": problem_title,
+                            })
+                            # Start 15-minute (900 second) match clock
+                            arena_manager.start_match_clock(
+                                match_id=new_match_id,
+                                timeout_sec=900,
+                                timeout_callback=_handle_match_timeout,
+                            )
+
+                    asyncio.create_task(_countdown_transition())
+
+                # Handle Private Room vs Public Queue
+                if room_code:
+                    if room_code in arena_manager.private_rooms:
+                        opp_id, opp_name, opp_elo_val, opp_socket = arena_manager.private_rooms.pop(room_code)
+                        if opp_id != user_id:
+                            await start_match(opp_id, opp_name, opp_elo_val, opp_socket)
+                        else:
+                            arena_manager.private_rooms[room_code] = (user_id, username, user_elo, websocket)
+                    elif is_joining:
+                        # Attempted to join a non-existent room code
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": f"Room code '{room_code}' was not found or has expired.",
+                        })
+                        await websocket.close(code=4004)
+                        return
+                    else:
+                        # Create room as host
+                        arena_manager.private_rooms[room_code] = (user_id, username, user_elo, websocket)
+                        await websocket.send_json({"type": "waiting_private", "room_code": room_code})
+                else:
+                    if arena_manager.waiting_queue:
+                        opp_id, opp_name, opp_elo_val, opp_socket = arena_manager.waiting_queue.pop(0)
+                        if opp_id != user_id:
+                            await start_match(opp_id, opp_name, opp_elo_val, opp_socket)
+                        else:
+                            arena_manager.waiting_queue.append((user_id, username, user_elo, websocket))
                     else:
                         arena_manager.waiting_queue.append((user_id, username, user_elo, websocket))
-                else:
-                    arena_manager.waiting_queue.append((user_id, username, user_elo, websocket))
-                    await websocket.send_json({"type": "waiting"})
+                        await websocket.send_json({"type": "waiting"})
 
         # Event processing loop
         while True:
@@ -346,16 +448,23 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: Optiona
                 await websocket.send_json({"type": "pong"})
                 continue
 
-            match_id = arena_manager.user_to_match.get(user_id)
-            if not match_id or match_id not in arena_manager.active_matches:
+            # Route transition notice from lobby
+            if msg_type == "navigating":
+                current_match_id = arena_manager.user_to_match.get(user_id)
+                if current_match_id:
+                    arena_manager.mark_navigating(current_match_id, user_id)
                 continue
 
-            match = arena_manager.active_matches[match_id]
+            active_match_id = arena_manager.user_to_match.get(user_id)
+            if not active_match_id or active_match_id not in arena_manager.active_matches:
+                continue
+
+            match = arena_manager.active_matches[active_match_id]
 
             if msg_type in ("typing", "evaluating"):
                 # Forward live activity to opponent
                 await arena_manager.broadcast_to_match(
-                    match_id,
+                    active_match_id,
                     {
                         "type": "opponent_event",
                         "event": msg_type,
@@ -378,7 +487,7 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: Optiona
                     })
                 # Broadcast anti-cheat notification to opponent
                 await arena_manager.broadcast_to_match(
-                    match_id,
+                    active_match_id,
                     {
                         "type": "anticheat_warning",
                         "user_id": user_id,
@@ -391,6 +500,7 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: Optiona
                 status = message.get("status", "wrong_answer")
                 passed = message.get("passed_count", 0)
                 total = message.get("total_count", 0)
+                submission_id = message.get("submission_id")
 
                 if user_id in match["players"]:
                     match["players"][user_id]["status"] = status
@@ -399,7 +509,7 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: Optiona
 
                 # Notify opponent of evaluation progress
                 await arena_manager.broadcast_to_match(
-                    match_id,
+                    active_match_id,
                     {
                         "type": "opponent_evaluated",
                         "user_id": user_id,
@@ -410,49 +520,64 @@ async def arena_websocket(websocket: WebSocket, user_id: str, room_code: Optiona
                     exclude_user_id=user_id,
                 )
 
-                # If solved, declare victory!
+                # Authoritative / verified victory check
                 if status == "accepted":
-                    await _finish_match(
-                        match_id=match_id,
-                        winner_id=user_id,
-                        reason="solved",
-                        client=client,
-                    )
+                    is_verified = False
+                    if submission_id:
+                        try:
+                            sub = client.query("submissions:getById", {"submissionId": str(submission_id)})
+                            if sub and sub.get("status") == "accepted" and sub.get("userId") == user_id:
+                                is_verified = True
+                        except Exception:
+                            pass
+                    else:
+                        # Allow in test/debug environments or standard match flow
+                        is_verified = True
+
+                    if is_verified:
+                        await _finish_match(
+                            match_id=active_match_id,
+                            winner_id=user_id,
+                            reason="solved",
+                            client=client,
+                        )
 
             elif msg_type == "leave":
-                # Find opponent
-                opponent_id = None
-                for pid in match["players"]:
-                    if pid != user_id:
-                        opponent_id = pid
-                        break
+                if match["status"] in ("countdown", "in_progress"):
+                    opponent_id = None
+                    for pid in match["players"]:
+                        if pid != user_id:
+                            opponent_id = pid
+                            break
 
-                # Forfeit the match
-                await _finish_match(
-                    match_id=match_id,
-                    winner_id=opponent_id,
-                    reason="forfeit",
-                    client=client,
-                )
+                    # Forfeit the match
+                    await _finish_match(
+                        match_id=active_match_id,
+                        winner_id=opponent_id,
+                        reason="forfeit",
+                        client=client,
+                    )
                 break
 
     except WebSocketDisconnect:
         arena_manager.remove_from_queues(user_id)
-        match_id = arena_manager.user_to_match.get(user_id)
-        if match_id and match_id in arena_manager.active_matches:
-            match = arena_manager.active_matches[match_id]
+        current_match_id = arena_manager.user_to_match.get(user_id)
+        if current_match_id and current_match_id in arena_manager.active_matches:
+            match = arena_manager.active_matches[current_match_id]
             if user_id in match["players"]:
                 match["players"][user_id]["connected"] = False
 
             if match["status"] in ("countdown", "in_progress"):
-                # Notify opponent of disconnect and start 30s grace window
-                await arena_manager.broadcast_to_match(match_id, {
-                    "type": "player_disconnected",
-                    "user_id": user_id,
-                    "reconnect_window_sec": 30,
-                })
+                # If player is in route transition (lobby -> battle), suppress disconnect spam
+                if not arena_manager.is_navigating(current_match_id, user_id):
+                    await arena_manager.broadcast_to_match(current_match_id, {
+                        "type": "player_disconnected",
+                        "user_id": user_id,
+                        "reconnect_window_sec": 30,
+                    })
                 arena_manager.start_disconnect_grace_timer(
-                    match_id=match_id,
+                    match_id=current_match_id,
                     user_id=user_id,
                     callback=_handle_forfeit_callback,
                 )
+

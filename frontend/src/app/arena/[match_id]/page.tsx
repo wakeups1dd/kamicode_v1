@@ -9,7 +9,7 @@ import ProblemPanel from "@/components/ProblemPanel";
 import CodeEditor from "@/components/CodeEditor";
 import TerminalConsole from "@/components/TerminalConsole";
 import AIAnalysisCard from "@/components/AIAnalysisCard";
-import { Loader2, Swords, Trophy, Activity, LogOut } from "lucide-react";
+import { Loader2, Swords, Trophy, Activity, LogOut, Clock, User } from "lucide-react";
 
 export default function ArenaBattle({ params }: { params: Promise<{ match_id: string }> }) {
   const router = useRouter();
@@ -49,12 +49,31 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
   // Arena State
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
+  const [opponentInfo, setOpponentInfo] = useState<{ username: string; elo: number } | null>(null);
   const [opponentStatus, setOpponentStatus] = useState<"Waiting" | "Coding..." | "Evaluating tests..." | "Finished!" | "Disconnected">("Waiting");
   const [opponentPassed, setOpponentPassed] = useState(0);
   const [opponentTotal, setOpponentTotal] = useState(0);
   const [matchResult, setMatchResult] = useState<"won" | "lost" | "draw" | null>(null);
   const [eloDelta, setEloDelta] = useState<number | null>(null);
   const [disconnectWarning, setDisconnectWarning] = useState<string | null>(null);
+  const [remainingSec, setRemainingSec] = useState<number>(900); // 15 mins game clock
+
+  const lastTypingSentRef = useRef<number>(0);
+
+  // 15-minute game clock countdown
+  useEffect(() => {
+    if (matchResult) return;
+    const timer = setInterval(() => {
+      setRemainingSec((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [matchResult]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
 
   // Terminal & AI State
   const [isRunning, setIsRunning] = useState(false);
@@ -83,7 +102,8 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
 
         const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const wsBase = apiBase.replace(/^http/, "ws");
-        const wsUrl = `${wsBase}/api/arena/ws/${uId}`;
+        // Explicitly scope the WebSocket connection to the match ID
+        const wsUrl = `${wsBase}/api/arena/ws/${uId}?match_id=${encodeURIComponent(matchId)}`;
         
         socket = new WebSocket(wsUrl);
         setWs(socket);
@@ -106,7 +126,23 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
             if (probSlug) {
               const p = await getProblem(probSlug);
               setProblem(p);
-              setSourceCode(p.starter_code || "");
+              const savedLang = typeof window !== "undefined" ? localStorage.getItem("kamicode_preferred_language") : null;
+              const effectiveLang = savedLang || language;
+              if (effectiveLang === "python") {
+                setSourceCode(p.starter_code || defaultSnippets.python);
+              } else if (defaultSnippets[effectiveLang as keyof typeof defaultSnippets]) {
+                setSourceCode(defaultSnippets[effectiveLang as keyof typeof defaultSnippets]);
+              } else {
+                setSourceCode(defaultSnippets.python);
+              }
+            }
+
+            // Extract opponent profile
+            if (data.players && Array.isArray(data.players)) {
+              const opp = data.players.find((pl: any) => pl.user_id !== uId);
+              if (opp) {
+                setOpponentInfo({ username: opp.username, elo: opp.elo || 1200 });
+              }
             }
           }
           else if (data.type === "opponent_event") {
@@ -134,8 +170,14 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
             setDisconnectWarning(`Opponent triggered anti-cheat telemetry: ${data.event.replace('_', ' ')}.`);
             setTimeout(() => setDisconnectWarning(null), 5000);
           }
+          else if (data.type === "error") {
+            setDisconnectWarning(data.message || "Match error occurred");
+            setTimeout(() => router.push("/arena"), 2500);
+          }
           else if (data.type === "match_ended") {
-            if (data.winner_id === uId) {
+            if (!data.winner_id) {
+              setMatchResult("draw");
+            } else if (data.winner_id === uId) {
               setMatchResult("won");
             } else {
               setMatchResult("lost");
@@ -187,7 +229,11 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
       }
 
       setSourceCode(value);
-      if (ws && ws.readyState === WebSocket.OPEN) {
+
+      // Throttle typing telemetry to once per 1.5 seconds to prevent frame flooding
+      const now = Date.now();
+      if (now - lastTypingSentRef.current > 1500 && ws && ws.readyState === WebSocket.OPEN) {
+        lastTypingSentRef.current = now;
         ws.send(JSON.stringify({ type: "typing" }));
       }
     }
@@ -306,8 +352,25 @@ export default function ArenaBattle({ params }: { params: Promise<{ match_id: st
           </div>
         </div>
 
+        {/* Live Match Clock */}
+        <div className="flex items-center gap-2 bg-background border-2 border-black rounded-xl px-3 py-1 font-mono text-xs font-black shadow-[2px_2px_0px_0px_#000]">
+          <Clock className={`w-4 h-4 ${remainingSec < 120 ? 'text-[#f85149] animate-pulse' : 'text-main'}`} />
+          <span className={remainingSec < 120 ? 'text-[#f85149]' : 'text-foreground'}>
+            {formatTime(remainingSec)}
+          </span>
+        </div>
+
         {/* Opponent Status HUD */}
-        <div className="flex items-center gap-4 bg-background border-2 border-black rounded-xl px-3 py-1 shadow-[2px_2px_0px_0px_#000]">
+        <div className="flex items-center gap-3 bg-background border-2 border-black rounded-xl px-3 py-1 shadow-[2px_2px_0px_0px_#000]">
+          {opponentInfo && (
+            <div className="flex items-center gap-1.5 border-r-2 border-black pr-3">
+              <User className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs font-black truncate max-w-[100px]">{opponentInfo.username}</span>
+              <span className="text-[10px] font-mono font-bold bg-[#ffbf00] text-black px-1.5 py-0.2 rounded border border-black">
+                {opponentInfo.elo}
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-[#8bd600] animate-pulse" />
             <span className="text-xs font-bold text-muted-foreground">Opponent:</span>
